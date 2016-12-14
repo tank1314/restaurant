@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="UserRechargeMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		nmw_user_recharge
+	</sql>
+
+    <sql id="yh_userName">
+        yh_user
+    </sql>
+	
+	<!-- 字段 -->
+	<sql id="Field">
+		uid,	
+		user_name,	
+		UserRecharge_ID
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{uid},	
+		#{user_name},	
+		#{UserRecharge_ID}
+	</sql>
+
+
+	<!-- 列表 -->
+	<select id="datalistPage" parameterType="page" resultType="pd">
+        SELECT t.id,FORMAT(t.remain_give_money / 100, 2) remain_give_money,FORMAT(t.give_money / 100, 2) give_money,FORMAT(t.recharge_money / 100, 2) recharge_money, FORMAT( t.remain_recharge_money / 100, 2 ) remain_recharge_money, FORMAT(t.freeze_give_money, 2) freeze_give_money, FORMAT(t.freeze_recharge_money, 2) freeze_recharge_money, t.recharge_city_name, CASE pay_platform WHEN 'wx' THEN '微信' WHEN 'alipay' THEN '支付宝' WHEN 'activity' THEN '活动' WHEN 'linqu_refund' THEN '邻趣退款' WHEN 'longconvert' THEN '长期订转充值' WHEN 'month_benefit' THEN '内部福利' WHEN 'refund' THEN '家政退款' WHEN 'miu_refund' THEN ' 出行退款' ELSE pay_platform END pay_platform, t.recharge_terminal, t.terminal_version, t.channel, t.recommend_id, t.recommend_no, DATE_FORMAT(t.pay_time,'%Y-%m-%d %H:%i:%s') pay_time, a.realname, a.mobile
+        FROM <include refid="tableName"></include> t
+        LEFT JOIN <include refid="yh_userName"></include> a ON t.uid = a.id
+        WHERE 1 = 1 AND t. STATUS = 2
+		<if test="pd.keywords!= null and pd.keywords != ''"><!-- 关键词检索 -->
+			and
+				(
+				<!--	根据需求自己加检索条件 -->
+                    a.realname LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+                    OR
+                    t.id LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+                    OR
+                    a.mobile LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+				)
+		</if>
+        <if test="pd.recharge_money!= null and pd.recharge_money != '' and pd.recharge_money !='qt'">
+            AND t.recharge_money = #{pd.recharge_money}
+        </if>
+        <if test="pd.recharge_money == 'qt'">
+            AND t.recharge_money not IN (100,10000,30000,50000,100000,300000,500000)
+        </if>
+        <if test="pd.lastLoginStart !=null and pd.lastLoginStart !=''">
+            and t.pay_time &gt;= date_format(#{pd.lastLoginStart} ' 00:00:00','%Y-%m-%d %H:%i:%s')
+        </if>
+        <if test="pd.lastLoginEnd!=null and pd.lastLoginEnd!=''">
+            and t.pay_time &lt;= date_format(#{pd.lastLoginEnd} ' 23:59:59','%Y-%m-%d %H:%i:%s')
+        </if>
+        <if test="pd.pay_platform!=null and pd.pay_platform!='' and pd.pay_platform =='wxAndzfb' ">
+            and t.pay_platform in ('wx','alipay')
+        </if>
+        <if test="pd.pay_platform!=null and pd.pay_platform!='' and pd.pay_platform !='wxAndzfb' ">
+            and t.pay_platform = #{pd.pay_platform}
+        </if>
+        <if test="pd.recommend_no!=null and pd.recommend_no!='' and pd.recommend_no == 0 ">
+            and (t.recommend_no IS NULL OR t.recommend_no ='')
+        </if>
+        <if test="pd.recommend_no!=null and pd.recommend_no!='' and pd.recommend_no == 1 ">
+            and t.recommend_no IS NOT NULL AND t.recommend_no !=''
+        </if>
+        ORDER BY t.id desc
+	</select>
+	
+	<!-- 列表(全部) -->
+	<select id="listAll" parameterType="pd" resultType="pd">
+        SELECT IFNULL(c.transaction_id,'~') transaction_id ,IFNULL(b.trade_no,'~') trade_no,CONCAT(t.id,'') id,TRUNCATE(t.remain_give_money / 100, 2) remain_give_money,TRUNCATE(t.give_money / 100, 2) give_money,TRUNCATE(t.recharge_money / 100, 2) recharge_money, TRUNCATE( t.remain_recharge_money / 100, 2 ) remain_recharge_money, TRUNCATE(t.freeze_give_money, 2) freeze_give_money, TRUNCATE(t.freeze_recharge_money, 2) freeze_recharge_money, t.recharge_city_name, CASE pay_platform WHEN 'wx' THEN '微信' WHEN 'alipay' THEN '支付宝' WHEN 'activity' THEN '活动' WHEN 'linqu_refund' THEN '邻趣退款' WHEN 'longconvert' THEN '长期订转充值' WHEN 'month_benefit' THEN '内部福利' WHEN 'refund' THEN '家政退款' ELSE pay_platform END pay_platform, t.recharge_terminal, t.terminal_version, t.channel, t.recommend_id, t.recommend_no, DATE_FORMAT(t.pay_time,'%Y-%m-%d %H:%i:%s') pay_time, a.realname, a.mobile
+        FROM <include refid="tableName"></include> t
+        LEFT JOIN <include refid="yh_userName"></include> a ON t.uid = a.id
+        LEFT JOIN sn_alipaylog b ON t.recharge_sn = b.out_trade_no
+        LEFT JOIN sn_wxpaylog c ON t.recharge_sn = c.out_trade_no
+        WHERE 1 = 1 AND t. STATUS = 2
+        <if test="keywords!= null and keywords != ''"><!-- 关键词检索 -->
+            and
+            (
+            <!--	根据需求自己加检索条件 -->
+            a.realname LIKE CONCAT(CONCAT('%', #{keywords}),'%')
+            OR
+            t.id like CONCAT(CONCAT('%', #{keywords}),'%')
+            )
+        </if>
+        <if test="recharge_money!= null and recharge_money != '' and recharge_money !='qt'">
+            AND t.recharge_money = #{recharge_money}
+        </if>
+        <if test="recharge_money == 'qt'">
+            AND t.recharge_money not IN (100,10000,30000,50000,100000,300000,500000)
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            and t.pay_time &gt;= date_format(#{lastLoginStart} ' 00:00:00','%Y-%m-%d %H:%i:%s')
+        </if>
+        <if test="lastLoginEnd!=null and lastLoginEnd!=''">
+            and t.pay_time &lt;= date_format(#{lastLoginEnd} ' 23:59:59','%Y-%m-%d %H:%i:%s')
+        </if>
+
+        <if test="pay_platform!=null and pay_platform!='' and pay_platform =='wxAndzfb' ">
+            and t.pay_platform in ('wx','alipay')
+        </if>
+        <if test="pay_platform!=null and pay_platform!='' and pay_platform !='wxAndzfb' ">
+            and t.pay_platform = #{pay_platform}
+        </if><if test="recommend_no!=null and recommend_no!='' and recommend_no == 0 ">
+            and (t.recommend_no IS NULL OR t.recommend_no ='')
+        </if>
+        <if test="recommend_no!=null and recommend_no!='' and recommend_no == 1 ">
+            and t.recommend_no IS NOT NULL AND t.recommend_no !=''
+        </if>
+
+        ORDER BY t.id desc
+	</select>
+	
+	<!-- 批量删除 -->
+	<delete id="deleteAll" parameterType="String">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			UserRecharge_ID in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+                 #{item}
+		</foreach>
+	</delete>
+	
+	<!-- fh313596790qq(青苔) -->
+</mapper>

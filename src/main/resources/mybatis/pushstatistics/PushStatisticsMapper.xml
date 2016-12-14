@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="PushStatisticsMapper">
+	
+	<select id="datalistPage" parameterType="page" resultType="pd">
+		SELECT
+			u.mobile,
+			FROM_UNIXTIME(u.create_time) as create_time,
+			u.recommend_id,
+			pc.channel_name
+		FROM
+			yh_user u
+		LEFT JOIN nmw_push_channel pc ON u.recommend_id = pc.chn
+		WHERE
+			u.recommend_id != ''
+		AND u.recommend_id IS NOT NULL
+		AND recommend_activity_id = 8
+		<if test="pd.start_day !=null and pd.start_day!=''">
+			AND FROM_UNIXTIME(u.create_time,'%Y-%m-%d')>=#{pd.start_day}
+		</if>
+		<if test="pd.end_day !=null and pd.end_day!=''">
+			AND #{pd.end_day}>=FROM_UNIXTIME(u.create_time,'%Y-%m-%d')
+		</if>
+		<if test="pd.chn !=null and pd.chn!=''">
+			AND u.recommend_id=#{pd.chn}
+		</if>
+	</select>
+
+	<select id="orderDatalistPage" parameterType="page" resultType="pd">
+		SELECT
+			o.id,
+			o.address,
+			u.mobile,
+			FROM_UNIXTIME(u.create_time) AS create_time,
+			u.recommend_id,
+			pc.channel_name
+		FROM
+		nmw_order o
+		LEFT JOIN yh_user u ON u.id = o.uid
+		LEFT JOIN nmw_push_channel pc ON u.recommend_id = pc.chn
+		WHERE
+		u.recommend_id != ''
+		AND u.recommend_id IS NOT NULL
+		AND recommend_activity_id = 8
+		AND o.is_cancel=0
+		<if test="pd.start_day !=null and pd.start_day!=''">
+			AND FROM_UNIXTIME(u.create_time,'%Y-%m-%d')>=#{pd.start_day}
+		</if>
+		<if test="pd.end_day !=null and pd.end_day!=''">
+			AND #{pd.end_day}>=FROM_UNIXTIME(u.create_time,'%Y-%m-%d')
+		</if>
+		<if test="pd.chn !=null and pd.chn!=''">
+			AND u.recommend_id=#{pd.chn}
+		</if>
+	</select>
+
+
+</mapper>

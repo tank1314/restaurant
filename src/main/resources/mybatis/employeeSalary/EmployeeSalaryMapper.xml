@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="EmployeeSalaryMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		TB_EmployeeSalary
+	</sql>
+	
+	<!-- 字段 -->
+	<sql id="Field">
+		empNo,	
+		empSalary,	
+		EmployeeSalary_ID
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{empNo},	
+		#{empSalary},	
+		#{EmployeeSalary_ID}
+	</sql>
+	
+	<!-- 新增-->
+	<insert id="save" parameterType="pd">
+		insert into 
+	<include refid="tableName"></include>
+		(
+	<include refid="Field"></include>
+		) values (
+	<include refid="FieldValue"></include>
+		)
+	</insert>
+	
+	<!-- 删除-->
+	<delete id="delete" parameterType="pd">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			EmployeeSalary_ID = #{EmployeeSalary_ID}
+	</delete>
+	
+	<!-- 修改 -->
+	<update id="edit" parameterType="pd">
+		update
+		<include refid="tableName"></include>
+		set 
+			empNo = #{empNo},
+			empSalary = #{empSalary},
+		EmployeeSalary_ID = EmployeeSalary_ID
+		where 
+		EmployeeSalary_ID = #{EmployeeSalary_ID}
+	</update>
+	
+	<!-- 通过ID获取数据 -->
+	<select id="findById" parameterType="pd" resultType="pd">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 
+			EmployeeSalary_ID = #{EmployeeSalary_ID}
+	</select>
+	
+	<!-- 列表 -->
+	<select id="datalistPage" parameterType="page" resultType="pd">
+		SELECT
+		o.allot_no AS empNo,
+		s.SITE_NAME AS siteName,
+		a.realname,
+		count(o.id) AS orderNumber,
+		floor(sum(CASE WHEN op.valuationunitname='小时' THEN o.spend_time ELSE 0 END)/60) AS spendTime,
+		truncate(SUM(
+		CASE
+		WHEN oe.service_rating = 5 THEN o.premium_money / 100
+		WHEN oe.service_rating = 3 THEN o.premium_money * 0.9 / 100
+		WHEN oe.service_rating = 1 THEN 0 ELSE o.premium_money / 100 END),2) AS empSalary
+		FROM
+		nmw_order o
+		LEFT JOIN nmw_order_evaluate oe ON oe.order_id = o.id
+		LEFT JOIN yh_admin a ON a.username=o.allot_no
+		LEFT JOIN nb_site s ON s.SITE_SID = a.belongunit
+		LEFT JOIN order_product op ON op.order_sn=o.order_sn
+		WHERE o.order_status=7
+		<if test="pd.empNo!= null and pd.empNo != ''">
+			and o.allot_no=#{pd.empNo}
+		</if>
+		<if test="pd.create_day!= null and pd.create_day != ''">
+			AND o.start_day>=#{pd.create_day}
+		</if>
+		<if test="pd.end_day !=null and pd.end_day!=''">
+			AND #{pd.end_day}>=o.start_day
+		</if>
+		<if test="pd.site_sid !=null and pd.site_sid !=''">
+			AND s.site_sid = #{pd.site_sid}
+		</if>
+		<if test="pd.trueSalary !=null and pd.trueSalary !=''">
+			AND o.start_day>(FROM_UNIXTIME(a.create_time,'%Y-%m-%d')+INTERVAL 30 day)
+		</if>
+		GROUP BY o.allot_no
+	</select>
+	
+	<!-- 列表(全部) -->
+	<select id="listAll" parameterType="page" resultType="pd">
+		SELECT
+		o.allot_no AS empNo,
+		s.SITE_NAME AS siteName,
+		a.realname,
+		count(o.id) AS orderNumber,
+		floor(sum(CASE WHEN op.valuationunitname='小时' THEN o.spend_time ELSE 0 END)/60) AS spendTime,
+		truncate(SUM(
+		CASE
+		WHEN oe.service_rating = 5 THEN o.premium_money / 100
+		WHEN oe.service_rating = 3 THEN o.premium_money * 0.9 / 100
+		WHEN oe.service_rating = 1 THEN 0 ELSE o.premium_money / 100 END),2) AS empSalary
+		FROM
+		nmw_order o
+		LEFT JOIN nmw_order_evaluate oe ON oe.order_id = o.id
+		LEFT JOIN yh_admin a ON a.username=o.allot_no
+		LEFT JOIN nb_site s ON s.SITE_SID = a.belongunit
+		LEFT JOIN order_product op ON op.order_sn=o.order_sn
+		WHERE o.order_status=7
+		<if test="pd.empNo!= null and pd.empNo != ''">
+			and o.allot_no=#{pd.empNo}
+		</if>
+		<if test="pd.create_day!= null and pd.create_day != ''">
+			AND o.start_day>=#{pd.create_day}
+		</if>
+		<if test="pd.end_day !=null and pd.end_day!=''">
+			AND #{pd.end_day}>=o.start_day
+		</if>
+		<if test="pd.site_sid !=null and pd.site_sid !=''">
+			AND s.site_sid = #{pd.site_sid}
+		</if>
+		<if test="pd.trueSalary !=null and pd.trueSalary !=''">
+			AND o.start_day>(FROM_UNIXTIME(a.create_time,'%Y-%m-%d')+INTERVAL 30 day)
+		</if>
+		GROUP BY o.allot_no
+	</select>
+
+
+	<!--SELECT
+		o.allot_no AS empNo,
+		s.SITE_NAME AS siteName,
+		floor( SUM(
+		CASE
+		WHEN oe.service_rating = 5 THEN o.premium_money / 100
+		WHEN oe.service_rating = 3 THEN o.premium_money * 0.9 / 100
+		WHEN oe.service_rating = 1 THEN 0 ELSE o.premium_money / 100 END)) AS empSalary
+		FROM
+		nmw_order o
+		LEFT JOIN nmw_order_evaluate oe ON oe.order_id = o.id
+		LEFT JOIN yh_admin a ON a.username=o.allot_no
+		LEFT JOIN nb_site s ON s.SITE_SID = a.belongunit
+		WHERE o.order_status=7 AND (o.is_evaluate=1 OR o.is_evaluate=2) AND oe.service_rating!=1
+		<if test="pd.empNo!= null and pd.empNo != ''">
+			and o.allot_no=#{pd.empNo}
+		</if>
+		<if test="pd.create_day!= null and pd.create_day != ''">
+			AND o.start_day>=#{pd.create_day}
+		</if>
+		<if test="pd.end_day !=null and pd.end_day!=''">
+			AND #{pd.end_day}>=o.start_day
+		</if>
+		GROUP BY o.allot_no-->
+	
+	<!-- 批量删除 -->
+	<delete id="deleteAll" parameterType="String">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			EmployeeSalary_ID in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+                 #{item}
+		</foreach>
+	</delete>
+	
+	<!-- fh313596790qq(青苔) -->
+</mapper>

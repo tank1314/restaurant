@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ShopUserMapper">
+
+    <resultMap type="Dictionaries" id="dictResultMap">
+        <id column="user_id" property="DICTIONARIES_ID"/>
+        <result column="username" property="NAME"/>
+    </resultMap>
+	<!-- 用户列表 -->
+	<select id="datauserListPage" parameterType="String" resultMap="dictResultMap">
+        SELECT user_id,CONCAT(username," [",name,"]") username from sys_user
+	</select>
+
+    <!-- 门店列表 -->
+    <select id="datashopListPage" parameterType="page" resultType="pd">
+        SELECT site_id,site_sid,site_name,case catagory when 1 then '自营' when 2 then '外包' end catagory,province,city from nb_site where site_status = 1
+    </select>
+
+	
+
+	<!-- fh313596790qq(青苔) -->
+</mapper>

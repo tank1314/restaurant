@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DailyProfileDataMapper">
+
+    <!-- 城市充值金额查询 -->
+    <select id="queryCityMoney" parameterType="pd" resultType="pd">
+        SELECT t.recharge_city_name city,SUM(TRUNCATE(t.recharge_money / 100, 2)) money FROM nmw_user_recharge t
+          WHERE 1=1 AND t.status = 2 AND t.recharge_city_name !=''
+          <if test="currentTime !='' and currentTime!=null">
+              AND DATE_FORMAT(t.pay_time ,'%Y-%m-%d') = #{currentTime}
+          </if>
+        AND (pay_platform='wx' OR pay_platform='alipay')
+        GROUP BY t.recharge_city_name
+    </select>
+
+    <!-- 城市满意度（满意、一般、不满意） -->
+    <select id="queryCityAllMy" parameterType="pd" resultType="pd">
+        SELECT COUNT(1) datacount,t.city_name city from nmw_order_evaluate a LEFT JOIN nmw_order t  ON t.id = a.order_id
+        WHERE 1=1 AND  a.service_rating IN (1,3, 5) AND t.order_status = 7
+        <if test="currentTime !='' and currentTime!=null">
+            AND DATE_FORMAT(a.create_time ,'%Y-%m-%d') = #{currentTime}
+        </if>
+        GROUP BY t.city_name
+    </select>
+    <!-- 城市满意度（满意） -->
+    <select id="queryCityMy" parameterType="pd" resultType="pd">
+        SELECT COUNT(1) datacount,t.city_name city from nmw_order_evaluate a LEFT JOIN nmw_order t  ON t.id = a.order_id
+        WHERE 1=1 AND  a.service_rating = 5 AND t.order_status = 7
+        <if test="currentTime !='' and currentTime!=null">
+            AND  DATE_FORMAT(a.create_time ,'%Y-%m-%d') = #{currentTime}
+        </if>
+        GROUP BY t.city_name
+    </select>
+
+    <!-- 服务订单量-->
+    <select id="queryCityServiceType" parameterType="pd" resultType="pd">
+        SELECT t.receiver_address_city city,COUNT(1) datacount, '跑腿' as ptname from nmw_lq_order t WHERE t.`status` = 2
+        <if test="currentTime !='' and currentTime!=null">
+            AND DATE_FORMAT(t.create_time ,'%Y-%m-%d') = #{currentTime}
+        </if>
+        AND t.receiver_address_city !='' GROUP BY receiver_address_city
+        UNION ALL
+        SELECT t.city_name city, COUNT(t.id) datacount,'打车' as ptname FROM nmw_miu_order t WHERE 1=1 AND t.`status` = 9
+        <if test="currentTime !='' and currentTime!=null">
+            AND DATE_FORMAT(t.create_time ,'%Y-%m-%d') = #{currentTime}
+        </if>
+        AND t.city_name !='' GROUP BY city_name
+        UNION ALL
+        SELECT t.city_name city,COUNT(t.id) datacount, '家政' as ptname FROM nmw_order t WHERE 1=1 AND t.`order_status` = 7
+        <if test="currentTime !='' and currentTime!=null">
+            AND t.start_day = #{currentTime}
+        </if>
+        AND t.city_name !='' GROUP BY city_name
+        UNION  ALL
+        SELECT t.city_name city, COUNT(t.id) datacount,'洗衣' as ptname FROM nmw_fornet_order t WHERE 1=1
+        AND t.`status` = 7
+        <if test="currentTime !='' and currentTime!=null">
+        AND DATE_FORMAT(t.create_time ,'%Y-%m-%d') = #{currentTime}
+        </if>
+        AND t.city_name !=''
+        group by city_name
+    </select>
+
+    <select id="queryJsDataCount" parameterType="pd" resultType="pd">
+        SELECT b.city2 city,COUNT(1) datacount FROM yh_admin t
+        LEFT JOIN account_role a ON t.id = a.account_id
+        LEFT JOIN nb_site b ON t.belongunit = b.site_sid
+        WHERE 1=1
+        AND t.status_is = 'Y' AND a.account_id IS NOT NULL AND a.role_id = 8
+        AND b.SITE_STATUS = 1
+        AND b.site_type = '03'
+        AND b.service_type = 1
+        AND b.catagory = 1
+        AND b.city2 IN (1,2,3)
+        GROUP BY city2
+    </select>
+
+</mapper>

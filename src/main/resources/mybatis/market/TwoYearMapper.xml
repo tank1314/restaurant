@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="TwoYearMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		nmw_activity
+	</sql>
+	
+	<!-- 字段 -->
+	<sql id="Field">
+		id,
+		mobile,	
+		exchange_number,	
+		uid,	
+		create_time,	
+		activity_type,	
+		activity_type_title,	
+		start_time,	
+		product_name,	
+		product_id,	
+		terminal,	
+		version_code,
+		date_format(create_time,'%Y-%m-%d') AS create_day
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{mobile},	
+		#{exchange_number},	
+		#{uid},	
+		#{create_time},	
+		#{activity_type},	
+		#{activity_type_title},	
+		#{start_time},	
+		#{product_name},	
+		#{product_id},	
+		#{terminal},	
+		#{version_code}
+	</sql>
+	
+	<!-- 新增-->
+	<insert id="save" parameterType="pd">
+		insert into 
+	<include refid="tableName"></include>
+		(
+	<include refid="Field"></include>
+		) values (
+	<include refid="FieldValue"></include>
+		)
+	</insert>
+	
+	<!-- 删除-->
+	<delete id="delete" parameterType="pd">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			TWOYEAR_ID = #{TWOYEAR_ID}
+	</delete>
+	
+	<!-- 修改 -->
+	<update id="edit" parameterType="pd">
+		update
+		<include refid="tableName"></include>
+		set 
+			mobile = #{mobile},
+			exchange_number = #{exchange_number},
+			uid = #{uid},
+			create_time = #{create_time},
+			activity_type = #{activity_type},
+			activity_type_title = #{activity_type_title},
+			start_time = #{start_time},
+			product_name = #{product_name},
+			product_id = #{product_id},
+			terminal = #{terminal},
+			version_code = #{version_code},
+		TWOYEAR_ID = TWOYEAR_ID
+		where 
+		TWOYEAR_ID = #{TWOYEAR_ID}
+	</update>
+	
+	<!-- 通过ID获取数据 -->
+	<select id="findById" parameterType="pd" resultType="pd">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 
+			TWOYEAR_ID = #{TWOYEAR_ID}
+	</select>
+	
+	<!-- 列表 -->
+	<select id="datalistPage" parameterType="page" resultType="pd">
+		select
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 1=1
+		<if test="pd.mobile!= null and pd.mobile != ''">
+			and mobile=#{pd.mobile}
+		</if>
+		<if test="pd.product_id!= null and pd.product_id != ''">
+			and product_id=#{pd.product_id}
+		</if>
+		<if test="pd.activity_type!= null and pd.activity_type != ''">
+			and activity_type=#{pd.activity_type}
+		</if>
+		<if test="pd.create_day!= null and pd.create_day != ''">
+			and create_time LIKE CONCAT(#{pd.create_day},'%')
+		</if>
+	</select>
+	
+	<!-- 列表(全部) -->
+	<select id="listAll" parameterType="page" resultType="pd">
+		select
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 1=1
+		<if test="pd.mobile!= null and pd.mobile != ''">
+			and mobile=#{pd.mobile}
+		</if>
+		<if test="pd.product_id!= null and pd.product_id != ''">
+			and product_id=#{pd.product_id}
+		</if>
+		<if test="pd.activity_type!= null and pd.activity_type != ''">
+			and activity_type=#{pd.activity_type}
+		</if>
+		<if test="pd.create_day!= null and pd.create_day != ''">
+			and create_time LIKE CONCAT(#{pd.create_day},'%')
+		</if>
+	</select>
+	
+	<!-- 批量删除 -->
+	<delete id="deleteAll" parameterType="String">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			TWOYEAR_ID in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+                 #{item}
+		</foreach>
+	</delete>
+	
+</mapper>

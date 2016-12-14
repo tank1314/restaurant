@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BossUserRelationMapper">
+
+    <!-- 查询当前登陆用户未分配的属于 加盟商组（da87f8a15f844b4db5fdab03214dc0e3）的用户 -->
+    <select id="BossBusRelationNotdatalistPage" parameterType="page" resultType="pd" >
+        SELECT t.id, t.bus_name, TRUNCATE(t.deposit / 100, 2) deposit, t.belong_unit, t.bus_status, t.create_by, t.create_time, t.modify_by, t.modify_time FROM nmw_alliance_business t
+        WHERE t.id NOT IN ( SELECT c.bus_id FROM nmw_sys_user_business_relation c WHERE c.boss_id = #{pd.USER_ID} AND  c.bus_status = 1)
+        AND t.bus_status = 1
+        <if test="pd.keywords!= null and pd.keywords != ''"><!-- 关键词检索 -->
+            and
+            (
+            t.bus_name LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+            or
+            t.belong_unit LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+            )
+        </if>
+
+        <if test="pd.lastLoginStart!=null and pd.lastLoginStart!=''"><!-- 登录时间检索 -->
+            and t.create_time &gt;= #{pd.lastLoginStart}
+        </if>
+        <if test="pd.lastLoginEnd!=null and pd.lastLoginEnd!=''"><!-- 登录时间检索 -->
+            and t.create_time &lt;= #{pd.lastLoginEnd}
+        </if>
+        order by t.create_time desc
+    </select>
+
+    <!-- 查询当前登陆用户已分配的属于 加盟商组（da87f8a15f844b4db5fdab03214dc0e3）的用户 -->
+    <select id="BossBusRelationIndatalistPage" parameterType="page" resultType="pd" >
+        SELECT t.id, t.bus_name, TRUNCATE(t.deposit / 100, 2) deposit, t.belong_unit, t.bus_status, t.create_by, t.create_time, t.modify_by, t.modify_time FROM nmw_alliance_business t
+        WHERE t.id IN ( SELECT c.bus_id FROM nmw_sys_user_business_relation c WHERE c.boss_id = #{pd.USER_ID} AND  c.bus_status = 1)
+        AND t.bus_status = 1
+        <if test="pd.keywords!= null and pd.keywords != ''"><!-- 关键词检索 -->
+            and
+            (
+            t.bus_name LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+            or
+            t.belong_unit LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+            )
+        </if>
+
+        <if test="pd.lastLoginStart!=null and pd.lastLoginStart!=''"><!-- 登录时间检索 -->
+            and t.create_time &gt;= #{pd.lastLoginStart}
+        </if>
+        <if test="pd.lastLoginEnd!=null and pd.lastLoginEnd!=''"><!-- 登录时间检索 -->
+            and t.create_time &lt;= #{pd.lastLoginEnd}
+        </if>
+        order by t.create_time desc
+    </select>
+
+
+
+    <!-- 插入管理员商户关系表 -->
+    <insert id="saveBossUserRelation" parameterType="pd">
+        insert into nmw_sys_user_business_relation (bus_id,boss_id,bus_status,create_by,create_time)
+        VALUE
+        (#{bus_id},#{boss_id},#{bus_status},#{create_by},#{create_time})
+    </insert>
+
+    <!-- 更新管理员商户关系 -->
+    <update id="editBossUserRelation" parameterType="pd">
+        UPDATE nmw_sys_user_business_relation set bus_status = #{bus_status},modify_by = #{modify_by},modify_time=#{modify_time} where bus_id = #{bus_id} and boss_id = #{boss_id}
+    </update>
+
+    <!--  查询角色组 -->
+    <select id="findAllRoleByParentId" parameterType="pd" resultType="pd">
+        SELECT role_id,role_name,parent_id from sys_role where PARENT_ID not in(0,1,2)
+    </select>
+
+
+	<!-- fh313596790qq(青苔) -->
+</mapper>

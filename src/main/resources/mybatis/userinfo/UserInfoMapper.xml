@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="UserInfoMapper">
+	
+	<select id="queryAddUser" parameterType="page" resultType="pd">
+		SELECT
+		count(id) AS userCount,
+		DATE_FORMAT(FROM_UNIXTIME(create_time),'%Y-%m') AS createTime
+		FROM
+		yh_user
+		WHERE
+		create_time >= unix_timestamp(#{pd.start_day})
+		GROUP BY createTime
+	</select>
+
+
+
+</mapper>

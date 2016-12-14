@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DataCenterMapper">
+	
+	<select id="querySiteDataList" parameterType="page" resultType="pd">
+		SELECT
+			count(id) AS orderCount,
+			site_name AS siteName
+		FROM
+			nmw_order
+		WHERE order_status=7
+		<if test="pd.start_day !=null and pd.start_day!=''">
+			AND start_day>=#{pd.start_day}
+		</if>
+		<if test="pd.end_day !=null and pd.end_day!=''">
+			AND #{pd.end_day}>=start_day
+		</if>
+		GROUP BY
+			site_id
+	</select>
+
+	<select id="queryOrderChangeList" parameterType="page" resultType="pd">
+		SELECT
+			count(id) AS orderCount,
+			site_name AS siteName
+		FROM
+			nmw_order
+		WHERE order_status=7
+		<if test="pd.start_day !=null and pd.start_day!=''">
+			AND start_day>=#{pd.start_day}
+		</if>
+		<if test="pd.end_day !=null and pd.end_day!=''">
+			AND #{pd.end_day}>=start_day
+		</if>
+		GROUP BY
+			site_id
+	</select>
+
+
+
+
+	<select id="queryServiceData" parameterType="page" resultType="pd">
+		SELECT
+		count(op.product_id) AS value,
+		op.pname AS name
+		FROM
+		nmw_order o
+		LEFT JOIN order_product op ON op.order_sn=o.order_sn
+		<if test="pd.start_day !=null and pd.start_day!=''">
+			AND o.start_day>=#{pd.start_day}
+		</if>
+		<if test="pd.end_day !=null and pd.end_day!=''">
+			AND #{pd.end_day}>=o.start_day
+		</if>
+		WHERE o.order_status=7
+		AND o.pclass1=#{pd.pclass}
+		GROUP BY op.product_id
+	</select>
+
+	<select id="queryTerminalServiceData" parameterType="page" resultType="pd">
+		SELECT
+			count(id) AS value,
+			order_source AS name
+		FROM
+			nmw_order
+		WHERE
+			order_status = 7
+		<if test="pd.start_day !=null and pd.start_day!=''">
+			AND start_day>=#{pd.start_day}
+		</if>
+		<if test="pd.end_day !=null and pd.end_day!=''">
+			AND #{pd.end_day}>=start_day
+		</if>
+			GROUP BY order_source
+	</select>
+
+	<select id="queryTimeServiceData" parameterType="page" resultType="pd">
+		SELECT
+			count(id) AS value,
+			CASE WHEN '12:00'>=start_time THEN '上午' WHEN '18:00'>=start_time THEN '下午' WHEN '24:00'>start_time THEN '夜晚' END AS name
+		FROM
+			nmw_order
+		WHERE
+			order_status = 7
+		<if test="pd.start_day !=null and pd.start_day!=''">
+			AND start_day>=#{pd.start_day}
+		</if>
+		<if test="pd.end_day !=null and pd.end_day!=''">
+			AND #{pd.end_day}>=start_day
+		</if>
+		GROUP BY name
+	</select>
+
+	<select id="queryRateServiceData" parameterType="page" resultType="pd">
+		SELECT
+			count(id) AS value,
+			concat(rate,'倍') AS name
+		FROM
+			nmw_order
+		WHERE
+			order_status = 7
+		<if test="pd.start_day !=null and pd.start_day!=''">
+			AND start_day>=#{pd.start_day}
+		</if>
+		<if test="pd.end_day !=null and pd.end_day!=''">
+			AND #{pd.end_day}>=start_day
+		</if>
+		GROUP BY rate
+	</select>
+
+
+
+</mapper>

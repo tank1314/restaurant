@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CouponMapper">
+
+
+    <select id="queryUserCouponByMobile" parameterType="page" resultType="pd">
+        SELECT
+            uc.id,
+            price,
+            title,
+            FROM_UNIXTIME(uc.end_time) AS end_time,
+            FROM_UNIXTIME(uc.create_time) as create_time,
+            CASE WHEN end_time > UNIX_TIMESTAMP(now()) THEN false ELSE true END AS out_date,
+            uc.coupon_id AS channel,
+            uc.reason
+        FROM
+            yh_user_coupon uc
+        LEFT JOIN yh_user u ON u.id = uc.uid
+        WHERE
+            u.mobile = #{pd.mobile}
+            AND uc.is_cancel=0
+        ORDER BY out_date,create_time desc
+    </select>
+
+    <insert id="saveCoupon" parameterType="pd">
+        INSERT INTO yh_user_coupon (
+			uid,
+			price,
+			start_time,
+			end_time,
+			create_time,
+			is_use,
+			apply_product_type,
+			apply_product_id,
+			coupon_id,
+			city_id,
+			is_cancel,
+			cancel_adminid,
+			coupon_type,
+			service_type,
+			title,
+			is_fill_reduce,
+			reduce_price,
+			reason
+		)
+		VALUES
+			(
+				#{uid},
+				#{price},
+				'0',
+				#{end_time},
+				#{create_time},
+				'0',
+				'0',
+				'0',
+				#{create_user},
+				'1',
+				'0',
+				'0',
+				#{coupon_type},
+				#{service_type},
+				#{title},
+				'0',
+				'0',
+				#{reason}
+			);
+    </insert>
+
+
+    <select id="findUserByMobile" parameterType="page" resultType="pd">
+        SELECT id from yh_user WHERE mobile=#{pd.mobile}
+    </select>
+
+
+    <update id="delete" parameterType="pd">
+        update yh_user_coupon SET is_cancel=1 WHERE id=#{id}
+    </update>
+</mapper>

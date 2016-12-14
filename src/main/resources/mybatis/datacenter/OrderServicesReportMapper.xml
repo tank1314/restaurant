@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="OrderServiceReportMapper">
+
+  <!-- 订单预约时间数据分析 -->
+	<select id="queryOrderAppointCount" parameterType="page" resultType="pd">
+        SELECT
+        count(t.id) appointCount,'total' timename
+        FROM
+        nmw_order t WHERE  t.is_cancel = 0
+        <if test="months != null and months !=''">
+            and SUBSTR(t.create_time, 1,7) = #{months}
+        </if>
+        <if test="months == null and months ==''">
+            and SUBSTR(t.create_time, 1,7) = date_format(CURDATE(), '%Y-%m')
+        </if>
+        UNION all
+        SELECT
+        count(t.id) appointCount,'00:00~03:00' timename
+        FROM
+        nmw_order t WHERE SUBSTR(t.create_time, 12) &gt;= '00:00:00' and SUBSTR(t.create_time, 12) &lt;= '03:00:59'
+        AND t.is_cancel = 0
+        <if test="months != null and months !=''">
+            and SUBSTR(t.create_time, 1,7) =  #{months}
+        </if>
+        <if test="months == null and months ==''">
+            and SUBSTR(t.create_time, 1,7) = date_format(CURDATE(), '%Y-%m')
+        </if>
+        union all
+        SELECT
+        count(t.id) appointCount,'03:01~06:00' timename
+        FROM
+        nmw_order t WHERE SUBSTR(t.create_time, 12) &gt;= '03:01:00' and SUBSTR(t.create_time, 12) &lt;= '06:00:59'
+        AND t.is_cancel = 0
+        <if test="months != null and months !=''">
+            and SUBSTR(t.create_time, 1,7) =  #{months}
+        </if>
+        <if test="months == null and months ==''">
+            and SUBSTR(t.create_time, 1,7) = date_format(CURDATE(), '%Y-%m')
+        </if>
+        union all
+        SELECT
+        count(t.id) appointCount,'06:01~09:00' timename
+        FROM
+        nmw_order t WHERE SUBSTR(t.create_time, 12) &gt;= '06:01:00' and SUBSTR(t.create_time, 12) &lt;='09:00:59'
+        AND t.is_cancel = 0
+        <if test="months != null and months !=''">
+            and SUBSTR(t.create_time, 1,7) =  #{months}
+        </if>
+        <if test="months == null and months ==''">
+            and SUBSTR(t.create_time, 1,7) = date_format(CURDATE(), '%Y-%m')
+        </if>
+        union all
+        SELECT
+        count(t.id) appointCount,'09:01~12:00' timename
+        FROM
+        nmw_order t WHERE SUBSTR(t.create_time, 12) &gt;= '09:01:00' and SUBSTR(t.create_time, 12) &lt;='12:00:59'
+        AND t.is_cancel = 0
+        <if test="months != null and months !=''">
+            and SUBSTR(t.create_time, 1,7) =  #{months}
+        </if>
+        <if test="months == null and months ==''">
+            and SUBSTR(t.create_time, 1,7) = date_format(CURDATE(), '%Y-%m')
+        </if>
+        union all
+        SELECT
+        count(t.id) appointCount,'12:01~15:00' timename
+        FROM
+        nmw_order t WHERE SUBSTR(t.create_time, 12) &gt;= '12:01:00' and SUBSTR(t.create_time, 12) &lt;='15:00:59'
+        AND t.is_cancel = 0
+        <if test="months != null and months !=''">
+            and SUBSTR(t.create_time, 1,7) =  #{months}
+        </if>
+        <if test="months == null and months ==''">
+            and SUBSTR(t.create_time, 1,7) = date_format(CURDATE(), '%Y-%m')
+        </if>
+        union all
+        SELECT
+        count(t.id) appointCount,'15:01~18:00' timename
+        FROM
+        nmw_order t WHERE SUBSTR(t.create_time, 12) &gt;= '15:01:00' and SUBSTR(t.create_time, 12) &lt;='18:00:59'
+        AND t.is_cancel = 0
+        <if test="months != null and months !=''">
+            and SUBSTR(t.create_time, 1,7) =  #{months}
+        </if>
+        <if test="months == null and months ==''">
+            and SUBSTR(t.create_time, 1,7) = date_format(CURDATE(), '%Y-%m')
+        </if>
+        union all
+        SELECT
+        count(t.id) appointCount,'18:01~21:00' timename
+        FROM
+        nmw_order t WHERE SUBSTR(t.create_time, 12) &gt;= '18:01:00' and SUBSTR(t.create_time, 12) &lt;='21:00:59'
+        AND t.is_cancel = 0
+        <if test="months != null and months !=''">
+            and SUBSTR(t.create_time, 1,7) = #{months}
+        </if>
+        <if test="months == null and months ==''">
+            and SUBSTR(t.create_time, 1,7) = date_format(CURDATE(), '%Y-%m')
+        </if>
+        union all
+        SELECT
+        count(t.id) appointCount,'21:01~24:00' timename
+        FROM
+        nmw_order t WHERE SUBSTR(t.create_time, 12) &gt;= '21:01:00' and SUBSTR(t.create_time, 12) &lt;='24:00:59'
+        AND t.is_cancel = 0
+        <if test="months != null and months !=''">
+            and SUBSTR(t.create_time, 1,7) =  #{months}
+        </if>
+        <if test="months == null and months ==''">
+            and SUBSTR(t.create_time, 1,7) = date_format(CURDATE(), '%Y-%m')
+        </if>
+    </select>
+
+    <!-- 订单服务时间数据统计  0:表示未服务完成  1: 表示服务完成-->
+    <select id="queryOrderServiceCount" parameterType="pd" resultType="pd">
+        SELECT
+        count(t.id) orderservicecount,'total' timename
+        FROM
+        nmw_order t WHERE t.start_time &gt;= '08:00' AND t.start_time &lt;='21:00'
+        AND t.is_cancel = 0
+        <if test="order_status == 0">
+            and t.order_status != '7'
+        </if>
+        <if test="order_status == 1 ">
+            and t.order_status = 7
+        </if>
+        AND SUBSTR(t.start_day, 1,7) =  #{months1}
+        UNION all
+        SELECT
+        count(t.id) orderservicecount,'08:00~09:00' timename
+        FROM
+        nmw_order t WHERE t.start_time &gt;= '08:00' and t.start_time &lt;='09:00'
+        AND t.is_cancel = 0
+        <if test="order_status == 0">
+            and t.order_status != '7'
+        </if>
+        <if test="order_status == 1 ">
+            and t.order_status = 7
+        </if>
+        AND SUBSTR(t.start_day, 1,7) =  #{months1}
+        UNION all
+        SELECT
+        count(t.id) orderservicecount,'09:01~10:00' timename
+        FROM
+        nmw_order t WHERE t.start_time &gt;= '09:01' and t.start_time &lt;='10:00'
+        AND t.is_cancel = 0
+        <if test="order_status == 0">
+            and t.order_status != '7'
+        </if>
+        <if test="order_status == 1 ">
+            and t.order_status = 7
+        </if>
+        AND SUBSTR(t.start_day, 1,7) =  #{months1}
+        UNION all
+        SELECT
+        count(t.id) orderservicecount,'10:01~11:00' timename
+        FROM
+        nmw_order t WHERE t.start_time &gt;= '10:01' and t.start_time &lt;='11:00'
+        AND t.is_cancel = 0
+        <if test="order_status == 0">
+            and t.order_status != '7'
+        </if>
+        <if test="order_status == 1 ">
+            and t.order_status = 7
+        </if>
+        AND SUBSTR(t.start_day, 1,7) =  #{months1}
+        UNION all
+        SELECT
+        count(t.id) orderservicecount,'11:01~12:00' timename
+        FROM
+        nmw_order t WHERE t.start_time &gt;= '11:01' and t.start_time &lt;='12:00'
+        AND t.is_cancel = 0
+        <if test="order_status == 0">
+            and t.order_status != '7'
+        </if>
+        <if test="order_status == 1 ">
+            and t.order_status = 7
+        </if>
+        AND SUBSTR(t.start_day, 1,7) =  #{months1}
+        UNION all
+        SELECT
+        count(t.id) orderservicecount,'12:01~13:00' timename
+        FROM
+        nmw_order t WHERE t.start_time &gt;= '12:01' and t.start_time &lt;='13:00'
+        AND t.is_cancel = 0
+        <if test="order_status == 0">
+            and t.order_status != '7'
+        </if>
+        <if test="order_status == 1 ">
+            and t.order_status = 7
+        </if>
+        AND SUBSTR(t.start_day, 1,7) =  #{months1}
+        UNION all
+        SELECT
+        count(t.id) orderservicecount,'13:01~14:00' timename
+        FROM
+        nmw_order t WHERE t.start_time &gt;= '13:01' and t.start_time &lt;='14:00'
+        AND t.is_cancel = 0
+        <if test="order_status == 0">
+            and t.order_status != '7'
+        </if>
+        <if test="order_status == 1 ">
+            and t.order_status = 7
+        </if>
+        AND SUBSTR(t.start_day, 1,7) =  #{months1}
+        UNION all
+        SELECT
+        count(t.id) orderservicecount,'14:01~15:00' timename
+        FROM
+        nmw_order t WHERE t.start_time &gt;= '14:01' and t.start_time &lt;='15:00'
+        AND t.is_cancel = 0
+        <if test="order_status == 0">
+            and t.order_status != '7'
+        </if>
+        <if test="order_status == 1 ">
+            and t.order_status = 7
+        </if>
+        AND SUBSTR(t.start_day, 1,7) =  #{months1}
+        UNION all
+        SELECT
+        count(t.id) orderservicecount,'15:01~16:00' timename
+        FROM
+        nmw_order t WHERE t.start_time &gt;= '15:01' and t.start_time &lt;='16:00'
+        AND t.is_cancel = 0
+        <if test="order_status == 0">
+            and t.order_status != '7'
+        </if>
+        <if test="order_status == 1 ">
+            and t.order_status = 7
+        </if>
+        AND SUBSTR(t.start_day, 1,7) =  #{months1}
+        UNION all
+        SELECT
+        count(t.id) orderservicecount,'16:01~17:00' timename
+        FROM
+        nmw_order t WHERE t.start_time &gt;= '16:01' and t.start_time &lt;='17:00'
+        AND t.is_cancel = 0
+        <if test="order_status == 0">
+            and t.order_status != '7'
+        </if>
+        <if test="order_status == 1 ">
+            and t.order_status = 7
+        </if>
+        AND SUBSTR(t.start_day, 1,7) =  #{months1}
+        UNION all
+        SELECT
+        count(t.id) orderservicecount,'17:01~18:00' timename
+        FROM
+        nmw_order t WHERE t.start_time &gt;= '17:01' and t.start_time &lt;='18:00'
+        AND t.is_cancel = 0
+        <if test="order_status == 0">
+            and t.order_status != '7'
+        </if>
+        <if test="order_status == 1 ">
+            and t.order_status = 7
+        </if>
+        AND SUBSTR(t.start_day, 1,7) =  #{months1}
+        UNION all
+        SELECT
+        count(t.id) orderservicecount,'18:01~19:00' timename
+        FROM
+        nmw_order t WHERE t.start_time &gt;= '18:01' and t.start_time &lt;='19:00'
+        AND t.is_cancel = 0
+        <if test="order_status == 0">
+            and t.order_status != '7'
+        </if>
+        <if test="order_status == 1 ">
+            and t.order_status = 7
+        </if>
+        AND SUBSTR(t.start_day, 1,7) =  #{months1}
+        UNION all
+        SELECT
+        count(t.id) orderservicecount,'19:01~20:00' timename
+        FROM
+        nmw_order t WHERE t.start_time &gt;= '19:01' and t.start_time &lt;='20:00'
+        AND t.is_cancel = 0
+        <if test="order_status == 0">
+            and t.order_status != '7'
+        </if>
+        <if test="order_status == 1 ">
+            and t.order_status = 7
+        </if>
+        AND SUBSTR(t.start_day, 1,7) =  #{months1}
+        UNION all
+        SELECT
+        count(t.id) orderservicecount,'20:01~21:00' timename
+        FROM
+        nmw_order t WHERE t.start_time &gt;= '20:01' and t.start_time &lt;='21:00'
+        AND t.is_cancel = 0
+        <if test="order_status == 0">
+            and t.order_status != '7'
+        </if>
+        <if test="order_status == 1 ">
+            and t.order_status = 7
+        </if>
+        AND SUBSTR(t.start_day, 1,7) =  #{months1}
+    </select>
+
+</mapper>

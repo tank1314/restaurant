@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ApplicationUserMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		yh_user
+	</sql>
+	
+	<!-- 字段 -->
+	<sql id="Field">
+		id,	
+		mobile,	
+		level_score,	
+		level_name,	
+		level_update_name,
+		level_update_time
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{id},	
+		#{mobile},	
+		#{level_score},	
+		#{level_name},	
+		#{level_update_name},	
+		#{level_update_time}
+	</sql>
+	
+	<!-- 新增-->
+	<insert id="save" parameterType="com.fh.entity.ApplicationUser">
+		insert into yh_user(uuid, username, password, last_login_time, create_time, email, status_is
+		, realname, balance, mobile, score, _notes, sex, login_count, allow_COD
+		, _sessionid, area_id, openid, union_source, allowemployee, refuseemployee
+		, allowsex, source, latest_login_source, open_id,level_score,level_name,level_update_time,level_update_name)
+		values(#{uuid, jdbcType=VARCHAR}, #{userName, jdbcType=VARCHAR}, #{password, jdbcType=VARCHAR}, #{lastLoginTime, jdbcType=BIGINT}
+		, #{createTime, jdbcType=BIGINT}, #{email, jdbcType=VARCHAR}, #{status, jdbcType=TINYINT}
+		, #{realName, jdbcType=VARCHAR}, #{balance, jdbcType=INTEGER}, #{mobile, jdbcType=VARCHAR}
+		, #{score, jdbcType=INTEGER}, #{notes, jdbcType=VARCHAR}, #{sex, jdbcType=TINYINT}
+		, #{loginCount, jdbcType=INTEGER}, #{allowCod, jdbcType=TINYINT}, #{sessionId, jdbcType=VARCHAR}
+		, #{areaId, jdbcType=INTEGER}, #{openId, jdbcType=VARCHAR}, #{unionSource, jdbcType=VARCHAR}
+		, #{allowEmployee, jdbcType=VARCHAR}, #{refuseEmployee, jdbcType=VARCHAR}, #{allowSex, jdbcType=INTEGER}
+		, #{source, jdbcType=VARCHAR}, #{latestLoginSource, jdbcType=VARCHAR}, #{open_id, jdbcType=VARCHAR},
+		#{level_score},#{level_name},now(),#{level_update_name}
+		);
+	</insert>
+	
+	<!-- 删除-->
+	<delete id="delete" parameterType="pd">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			APPLICATIONUSER_ID = #{APPLICATIONUSER_ID}
+	</delete>
+	
+	<!-- 修改 -->
+	<update id="edit" parameterType="pd">
+		update
+		<include refid="tableName"></include>
+		set 
+			level_score = #{level_score},
+			level_name = #{level_name},
+			level_update_name = #{level_update_name},
+			level_update_time = now()
+		where 
+		mobile = #{mobile}
+	</update>
+	
+	<!-- 通过ID获取数据 -->
+	<select id="findById" parameterType="pd" resultType="pd">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 
+			id = #{user_id}
+	</select>
+	
+	<!-- 列表 -->
+	<select id="datalistPage" parameterType="page" resultType="pd">
+		select
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 1=1
+		<if test="pd.mobile!= null and pd.mobile != ''"><!-- 关键词检索 -->
+			and
+				(
+				mobile=#{pd.mobile}
+				)
+		</if>
+	</select>
+	
+	<!-- 列表(全部) -->
+	<select id="listAll" parameterType="pd" resultType="pd">
+		select
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+	</select>
+	
+	<!-- 批量删除 -->
+	<delete id="deleteAll" parameterType="String">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			APPLICATIONUSER_ID in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+                 #{item}
+		</foreach>
+	</delete>
+
+
+	<select id="findByUUID" parameterType="String" resultType="com.fh.entity.ApplicationUser">
+		select
+		<include refid="Field"></include>
+		from
+		<include refid="tableName"></include>
+		where
+		uuid = #{uuid}
+	</select>
+
+
+	<insert id="saveCoupon" parameterType="java.util.HashMap">
+		INSERT INTO yh_user_coupon (
+					uid,
+					price,
+					end_time,
+					create_time,
+					is_use,
+					apply_product_type,
+					apply_product_id,
+					coupon_id,
+					city_id,
+					is_cancel,
+					cancel_adminid,
+					title,
+					coupon_type,
+					service_type
+				)
+				VALUES
+					(
+						#{uid},
+						#{price},
+						#{end_time},
+						UNIX_TIMESTAMP(now()),
+						0,
+						#{productType},
+						#{productId},
+						#{coupon_id},
+						#{city_id},
+						0,
+						0,
+						#{title},
+						#{coupon_type},
+						#{service_type}
+					);
+	</insert>
+
+
+	<select id="findByMobile" parameterType="pd" resultType="com.fh.entity.ApplicationUser">
+		SELECT id from yh_user WHERE mobile=#{mobile}
+	</select>
+	
+</mapper>

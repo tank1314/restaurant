@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="NiuRecommendMapper">
+
+	<!-- 列表 -->
+	<select id="datalistPage" parameterType="page" resultType="pd">
+        SELECT
+            ya.username,
+            o.id,
+            o.create_time
+        FROM
+            nmw_activity a
+        LEFT JOIN yh_admin ya ON ya.id=a.uid
+        LEFT JOIN yh_user u ON u.recommend_id=ya.username
+        LEFT JOIN nmw_order o ON o.uid=u.id
+        WHERE
+            activity_type = 99
+        <if test="pd.username!= null and pd.username != ''">
+            and
+            ya.username=#{pd.username}
+        </if>
+	</select>
+
+</mapper>

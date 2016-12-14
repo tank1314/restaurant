@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CityOrderAndEmpReportMapper">
+
+    <!-- 给站点营业额 -->
+    <select id="querySiteYYEdata" parameterType="pd" resultType="pd">
+        SELECT t.city_name city,t.site_name site,start_day time,TRUNCATE((SUM(t.premium_money/100) + SUM(t.tools_money / 100)) ,2) ordermoney  FROM nmw_order t LEFT JOIN nb_site a ON t.site_id = a.site_sid
+        WHERE t.pay_status = 1 AND t.is_cancel = 0 AND t.order_status = 7
+        <if test="ismanager != '' and ismanager !=null and ismanager == 0">
+            <if test="busStr !=null and busStr!= ''">
+                AND a.bus_id IN
+                <foreach item="item" index="index" collection="busStr" open="(" separator="," close=")">
+                    #{item,jdbcType=VARCHAR}
+                </foreach>
+            </if>
+        </if>
+        GROUP BY t.start_day,t.city_name,t.site_id
+        ORDER BY t.start_day DESC
+    </select>
+
+    <!-- 各站点 订单量-->
+    <select id="querySiteOrderdata" parameterType="pd" resultType="pd">
+        SELECT t.city_name city,t.site_name site,start_day time, COUNT(1) ordercount FROM nmw_order t LEFT JOIN nb_site a ON t.site_id = a.site_sid
+        WHERE t.pay_status = 1 AND t.is_cancel = 0 AND t.order_status = 7
+        <if test="ismanager != '' and ismanager !=null and ismanager == 0">
+            <if test="busStr !=null and busStr!= ''">
+                AND a.bus_id IN
+                <foreach item="item" index="index" collection="busStr" open="(" separator="," close=")">
+                    #{item,jdbcType=VARCHAR}
+                </foreach>
+            </if>
+        </if>
+        GROUP BY t.start_day,t.city_name,t.site_id
+        ORDER BY t.start_day DESC
+    </select>
+
+    <!-- 上班人数-->
+    <select id="querySiteSbNumdata" parameterType="pd" resultType="pd">
+        SELECT t.ondate time, CASE c.city2 WHEN '1' THEN '上海市' WHEN '2' THEN '深圳市' WHEN '3' THEN '杭州市' END city, c.site_name site,COUNT(t.EMPID) datacount from nb_onduty t
+        LEFT JOIN yh_admin b ON t.EMPID = b.username
+        LEFT JOIN nb_site c on b.belongunit = c.site_sid
+        LEFT JOIN account_role r ON b.id = r.account_id
+        WHERE t.ONSTATUS = 1 AND b.status_is = 'Y'  AND r.account_id IS NOT NULL AND r.role_id = 8
+        <if test="ismanager != '' and ismanager !=null and ismanager == 0">
+            <if test="busStr !=null and busStr!= ''">
+                AND c.bus_id IN
+                <foreach item="item" index="index" collection="busStr" open="(" separator="," close=")">
+                    #{item,jdbcType=VARCHAR}
+                </foreach>
+            </if>
+        </if>
+        GROUP BY c.SITE_SID ,t.ondate,c.city2
+        ORDER BY t.ondate DESC ,city
+    </select>
+
+    <!-- 休息人数-->
+    <select id="querySiteXxNumdata" parameterType="pd" resultType="pd">
+        SELECT t.redate time, CASE c.city2 WHEN '1' THEN '上海市' WHEN '2' THEN '深圳市' WHEN '3' THEN '杭州市' END city, c.site_name site,COUNT(t.EMPID) datacount FROM nb_rest t
+        LEFT JOIN yh_admin b ON t.EMPID = b.username
+        LEFT JOIN nb_site c on b.belongunit = c.site_sid
+        LEFT JOIN account_role r ON b.id = r.account_id
+        WHERE t.ISREST = 1 AND b.status_is = 'Y'  AND r.account_id IS NOT NULL AND r.role_id = 8
+        <if test="ismanager != '' and ismanager !=null and ismanager == 0">
+            <if test="busStr !=null and busStr!= ''">
+                AND c.bus_id IN
+                <foreach item="item" index="index" collection="busStr" open="(" separator="," close=")">
+                    #{item,jdbcType=VARCHAR}
+                </foreach>
+            </if>
+        </if>
+        GROUP BY c.SITE_SID ,t.redate,c.city2
+        ORDER BY t.redate DESC ,city
+    </select>
+
+    <!-- 站点下总人数-->
+    <select id="querySitePeo" parameterType="pd" resultType="pd">
+        SELECT COUNT(t.id) datacount FROM yh_admin t LEFT JOIN nb_site a ON t.belongunit = a.site_sid
+        LEFT JOIN account_role b ON t.id = b.account_id
+        WHERE t.status_is = 'Y' AND b.account_id IS NOT NULL AND b.role_id = 8
+        <if test="ismanager != '' and ismanager !=null and ismanager == 0">
+            <if test="busStr !=null and busStr!= ''">
+                AND a.bus_id IN
+                <foreach item="item" index="index" collection="busStr" open="(" separator="," close=")">
+                    #{item,jdbcType=VARCHAR}
+                </foreach>
+            </if>
+        </if>
+    </select>
+
+</mapper>

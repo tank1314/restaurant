@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="EmpSalaryMapper">
+
+
+
+	<select id="datalistPage"  parameterType="page" resultType="pd">
+		SELECT
+			o.id AS order_id,
+			o.site_name,
+			o.start_day,
+			a.realname,
+			floor(CASE WHEN op.valuationunitname='小时' THEN o.spend_time/60 ELSE 0 END) AS spend_time,
+			truncate(o.premium_money/100,2) AS premium_money,
+			o.rate,
+			o.city_name,
+			case WHEN oe.service_rating =5 THEN '满意' WHEN oe.service_rating =3 THEN '一般' WHEN oe.service_rating =1 THEN '不满意' ELSE '满意' END as service_rating,
+			o.allot_no,
+			CASE WHEN oe.service_rating =5 THEN truncate(o.premium_money/100,2) WHEN oe.service_rating =3 THEN truncate(o.premium_money*0.9/100,2) WHEN oe.service_rating =1 THEN 0 ELSE truncate(o.premium_money/100,2) END AS salary_money
+		FROM
+			nmw_order o
+		LEFT JOIN nmw_order_evaluate oe ON oe.order_id=o.id
+		LEFT JOIN order_product op ON op.order_sn=o.order_sn
+		LEFT JOIN yh_admin a ON a.username=o.allot_no
+		WHERE o.order_status=7
+		<if test="pd.start_day !=null and pd.start_day!=''">
+			AND start_day>=#{pd.start_day}
+		</if>
+		<if test="pd.end_day !=null and pd.end_day!=''">
+			AND #{pd.end_day}>=start_day
+		</if>
+		<if test="pd.order_id !=null and pd.order_id!=''">
+			AND o.id=#{pd.order_id}
+		</if>
+		<if test="pd.site_name !=null and pd.site_name!=''">
+			AND o.site_name LIKE concat('%',#{pd.site_name},'%')
+		</if>
+		<if test="pd.allot_no !=null and pd.allot_no!=''">
+			AND o.allot_no=#{pd.allot_no}
+		</if>
+		GROUP BY o.order_sn
+		ORDER BY o.start_day DESC
+	</select>
+
+
+	<select id="listForExcel"  parameterType="page" resultType="pd">
+		SELECT
+			o.id AS order_id,
+			o.site_name,
+			o.start_day,
+			a.realname,
+			floor(CASE WHEN op.valuationunitname='小时' THEN o.spend_time/60 ELSE 0 END) AS spend_time,
+			truncate(o.premium_money/100,2) AS premium_money,
+			o.rate,
+			o.city_name,
+			case WHEN oe.service_rating =5 THEN '满意' WHEN oe.service_rating =3 THEN '一般' WHEN oe.service_rating =1 THEN '不满意' ELSE '满意' END as service_rating,
+			o.allot_no,
+			CASE WHEN oe.service_rating =5 THEN truncate(o.premium_money/100,2) WHEN oe.service_rating =3 THEN truncate(o.premium_money*0.9/100,2) WHEN oe.service_rating =1 THEN 0 ELSE truncate(o.premium_money/100,2) END AS salary_money
+		FROM
+			nmw_order o
+		LEFT JOIN nmw_order_evaluate oe ON oe.order_id=o.id
+		LEFT JOIN order_product op ON op.order_sn=o.order_sn
+		LEFT JOIN yh_admin a ON a.username=o.allot_no
+		WHERE o.order_status=7
+		<if test="pd.start_day !=null and pd.start_day!=''">
+			AND start_day>=#{pd.start_day}
+		</if>
+		<if test="pd.end_day !=null and pd.end_day!=''">
+			AND #{pd.end_day}>=start_day
+		</if>
+		<if test="pd.order_id !=null and pd.order_id!=''">
+			AND o.id=#{pd.order_id}
+		</if>
+		<if test="pd.site_name !=null and pd.site_name!=''">
+			AND o.site_name LIKE concat('%',#{pd.site_name},'%')
+		</if>
+		<if test="pd.allot_no !=null and pd.allot_no!=''">
+			AND o.allot_no=#{pd.allot_no}
+		</if>
+		GROUP BY o.order_sn
+		ORDER BY o.start_day DESC
+	</select>
+
+
+
+	<!--表名 -->
+	<sql id="tableName">
+		nmw_emp_salaryEmpSalary
+	</sql>
+	
+	<!-- 字段 -->
+	<sql id="Field">
+		site_name,	
+		city_name,	
+		order_id,	
+		service_day,	
+		evaluate_level,	
+		order_money,	
+		order_salary,	
+		rate,	
+		EmpSalary_ID
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{site_name},	
+		#{city_name},	
+		#{order_id},	
+		#{service_day},	
+		#{evaluate_level},	
+		#{order_money},	
+		#{order_salary},	
+		#{rate},	
+		#{EmpSalary_ID}
+	</sql>
+	
+	<!-- 新增-->
+	<insert id="save" parameterType="pd">
+		insert into 
+	<include refid="tableName"></include>
+		(
+	<include refid="Field"></include>
+		) values (
+	<include refid="FieldValue"></include>
+		)
+	</insert>
+	
+	<!-- 删除-->
+	<delete id="delete" parameterType="pd">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			EmpSalary_ID = #{EmpSalary_ID}
+	</delete>
+	
+	<!-- 修改 -->
+	<update id="edit" parameterType="pd">
+		update
+		<include refid="tableName"></include>
+		set 
+			site_name = #{site_name},
+			city_name = #{city_name},
+			order_id = #{order_id},
+			service_day = #{service_day},
+			evaluate_level = #{evaluate_level},
+			order_money = #{order_money},
+			order_salary = #{order_salary},
+			rate = #{rate},
+		EmpSalary_ID = EmpSalary_ID
+		where 
+		EmpSalary_ID = #{EmpSalary_ID}
+	</update>
+	
+	<!-- 通过ID获取数据 -->
+	<select id="findById" parameterType="pd" resultType="pd">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 
+			EmpSalary_ID = #{EmpSalary_ID}
+	</select>
+	
+	<!-- 列表 -->
+	<!--<select id="datalistPage" parameterType="page" resultType="pd">
+		select
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 1=1
+		<if test="pd.keywords!= null and pd.keywords != ''">&lt;!&ndash; 关键词检索 &ndash;&gt;
+			and
+				(
+				&lt;!&ndash;	根据需求自己加检索条件
+					字段1 LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					 or 
+					字段2 LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') 
+				&ndash;&gt;
+				)
+		</if>
+	</select>-->
+	
+	<!-- 列表(全部) -->
+	<select id="listAll" parameterType="pd" resultType="pd">
+		select
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+	</select>
+	
+	<!-- 批量删除 -->
+	<delete id="deleteAll" parameterType="String">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			EmpSalary_ID in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+                 #{item}
+		</foreach>
+	</delete>
+	
+	<!-- fh313596790qq(青苔) -->
+</mapper>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="UserHabitMapper">
+
+    <!--查询男女占比-->
+   <select id="sexPercent" parameterType="pd" resultType="pd">
+      SELECT
+	    count(distinct uid) AS userNum,
+        CASE WHEN sex=0 THEN '未知' WHEN sex=1 THEN '男' WHEN sex=2 THEN '女' END AS sex
+    FROM
+        yh_user_address
+    WHERE
+        is_del = 0
+    GROUP BY
+        sex
+   </select>
+
+    <!--城市地址比例-->
+    <select id="cityPercent" parameterType="pd" resultType="pd">
+        SELECT
+         CASE WHEN city_id=0 THEN '未知' WHEN city_id=1 THEN '上海'  WHEN city_id=2 THEN '深圳'  WHEN city_id=3 THEN '杭州' END as cityName,
+        count(city_id) AS cityNum
+         from yh_user_address WHERE
+            is_del = 0
+        GROUP BY city_id
+   </select>
+
+    <select id="payPercent" parameterType="pd" resultType="pd">
+        SELECT CASE WHEN pay_source ='' then '未知' WHEN pay_source ='alipay' then '支付宝'
+        WHEN pay_source ='wallet' then '钱包' WHEN pay_source ='weixin' then '微信支付'  WHEN pay_source ='xiaoniu_alipay' then '小牛支付' end AS paySource,
+        count(id) AS payNum from nmw_order WHERE pay_status=1 GROUP BY pay_source
+   </select>
+
+    <select id="terminalPercent" parameterType="pd" resultType="pd">
+        SELECT CASE WHEN order_source='android' THEN '安卓'
+        WHEN order_source='iOS' THEN 'ios' WHEN order_source='old' THEN '老订单' WHEN order_source='weixin' THEN '微信' END AS orderSource,
+        count(id) AS terminalNum
+        from nmw_order GROUP BY order_source
+   </select>
+
+    <select id="orderTypePercent" parameterType="pd" resultType="pd">
+        SELECT
+            '无单' as orderType,
+            count(distinct u.id) AS userNum
+        FROM
+            yh_user u
+        LEFT JOIN nmw_order o ON u.id = o.uid
+        WHERE o.id is null
+        UNION ALL
+        SELECT
+          '有单' as orderType,
+            count(distinct u.id) AS userNum
+        FROM
+            yh_user u
+        LEFT JOIN nmw_order o ON u.id = o.uid
+        WHERE o.id is not null
+   </select>
+
+    <select id="useFrequency" parameterType="pd" resultType="pd">
+        SELECT
+            count(a.ordercount) totalPerson,
+            a.ordercount FROM ( SELECT COUNT(t.id) ordercount, t.uid FROM nmw_order t WHERE t.is_cancel=0 GROUP BY t.uid) a
+         GROUP BY
+            a.ordercount
+   </select>
+
+    <select id="addressCount" parameterType="pd" resultType="pd">
+        SELECT
+            count(a.addressCount) addressPerson,
+            a.addressCount FROM( SELECT uid,count(uid) addressCount from yh_user_address WHERE is_del=0 group by uid) a
+        GROUP BY
+        a.addressCount
+   </select>
+
+
+
+
+
+</mapper>

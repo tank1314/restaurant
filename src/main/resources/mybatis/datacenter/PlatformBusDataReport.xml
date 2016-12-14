@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="PlatFormBusDataMapper">
+    <!-- 当前月各业务平台数据分析 -->
+    <select id="queryCurrentMothPlatData" parameterType="pd" resultType="pd">
+        SELECT COUNT(t.id) datacount,'洗衣' as ptname FROM nmw_fornet_order t WHERE 1=1
+        <if test="orderstatus != null and orderstatus !='' and orderstatus == 7">
+            AND t.`status` = 7
+        </if>
+        <if test="orderstatus != null and orderstatus !='' and orderstatus == 8">
+            AND t.`status` = 8
+        </if>
+        <if test="lastLoginEnd != '' and lastLoginEnd != null ">
+            AND t.create_time LIKE CONCAT(CONCAT('%', #{lastLoginEnd}),'%')
+        </if>
+        UNION ALL
+        SELECT COUNT(t.id) datacount, '跑腿' as ptname FROM nmw_lq_order t WHERE 1=1
+        <if test="orderstatus != null and orderstatus !='' and orderstatus == 7">
+            AND t.`status` = 2
+        </if>
+        <if test="orderstatus != null and orderstatus !='' and orderstatus == 8">
+            AND t.`status` = -1
+        </if>
+        <if test="lastLoginEnd != '' and lastLoginEnd != null ">
+            AND t.create_time LIKE CONCAT(CONCAT('%', #{lastLoginEnd}),'%')
+        </if>
+        UNION ALL
+        SELECT COUNT(t.id) datacount, '出行' as ptname FROM nmw_miu_order t WHERE 1=1
+        <if test="orderstatus != null and orderstatus !='' and orderstatus == 7">
+            AND t.`status` = 9
+        </if>
+        <if test="orderstatus != null and orderstatus !='' and orderstatus == 8">
+            AND t.`status` = 10
+        </if>
+        <if test="lastLoginEnd != '' and lastLoginEnd != null ">
+            AND t.create_time LIKE CONCAT(CONCAT('%', #{lastLoginEnd}),'%')
+        </if>
+    </select>
+
+    <!-- 各业务平台各月数据走势图分析-->
+    <select id="queryPlatBuszsData" parameterType="pd" resultType="pd">
+        SELECT a.* FROM (
+        SELECT COUNT(t.id) datacount,'洗衣' as ptname,DATE_FORMAT(t.create_time,'%Y-%m') create_time FROM nmw_fornet_order t WHERE 1=1
+        <if test="orderstatus != null and orderstatus !='' and orderstatus == 7">
+            AND t.`status` = 7
+        </if>
+        <if test="orderstatus != null and orderstatus !='' and orderstatus == 8">
+            AND t.`status` = 8
+        </if>
+        <if test="lastLoginEnd != '' and lastLoginEnd != null ">
+            AND t.create_time &lt;= #{lastLoginEnd}
+        </if>
+        GROUP BY DATE_FORMAT(t.create_time,'%Y-%m')
+        UNION ALL
+        SELECT COUNT(t.id) datacount, '跑腿' as ptname,DATE_FORMAT(t.create_time,'%Y-%m') create_time FROM nmw_lq_order t WHERE 1=1
+        <if test="orderstatus != null and orderstatus !='' and orderstatus == 7">
+            AND t.`status` = 2
+        </if>
+        <if test="orderstatus != null and orderstatus !='' and orderstatus == 8">
+            AND t.`status` = -1
+        </if>
+        <if test="lastLoginEnd != '' and lastLoginEnd != null ">
+            AND t.create_time &lt;= #{lastLoginEnd}
+        </if>
+        GROUP BY DATE_FORMAT(t.create_time,'%Y-%m')
+        UNION ALL
+        SELECT COUNT(t.id) datacount, '出行' as ptname,DATE_FORMAT(t.create_time,'%Y-%m') create_time FROM nmw_miu_order t WHERE 1=1
+        <if test="orderstatus != null and orderstatus !='' and orderstatus == 7">
+            AND t.`status` = 9
+        </if>
+        <if test="orderstatus != null and orderstatus !='' and orderstatus == 8">
+            AND t.`status` = 10
+        </if>
+        <if test="lastLoginEnd != '' and lastLoginEnd != null ">
+            AND t.create_time &lt;= #{lastLoginEnd}
+        </if>
+        GROUP BY DATE_FORMAT(t.create_time,'%Y-%m')) a  ORDER BY a.create_time
+    </select>
+
+    <!-- 邻趣业务数据单独分析-->
+    <select id="quereylqzsData" parameterType="pd" resultType="pd">
+        SELECT COUNT(t.id) datacount, '跑腿' as ptname,DATE_FORMAT(t.create_time,'%Y-%m') create_time from nmw_lq_order t WHERE 1=1
+        <if test="orderstatus != null and orderstatus !='' and orderstatus == 7">
+            AND t.`status` = 2
+        </if>
+        <if test="orderstatus != null and orderstatus !='' and orderstatus == 8">
+            AND t.`status` = -1
+        </if>
+        <if test="lastLoginEnd != '' and lastLoginEnd != null ">
+            AND t.create_time &lt;= #{lastLoginEnd}
+        </if>
+        GROUP BY DATE_FORMAT(t.create_time,'%Y-%m') ORDER BY t.create_time
+    </select>
+
+    <!-- 觅优业务数据单独分析-->
+    <select id="quereyMyzsData" parameterType="pd" resultType="pd">
+        SELECT COUNT(t.id) datacount, '出行' as ptname,DATE_FORMAT(t.create_time,'%Y-%m') create_time from nmw_miu_order t WHERE 1=1
+        <if test="orderstatus != null and orderstatus !='' and orderstatus == 7">
+            AND t.`status` = 9
+        </if>
+        <if test="orderstatus != null and orderstatus !='' and orderstatus == 8">
+            AND t.`status` = 10
+        </if>
+        <if test="lastLoginEnd != '' and lastLoginEnd != null ">
+            AND t.create_time &lt;= #{lastLoginEnd}
+        </if>
+        GROUP BY DATE_FORMAT(t.create_time,'%Y-%m') ORDER BY t.create_time
+    </select>
+
+    <!-- 邻趣数据分析-->
+    <select id="queryLqdata" parameterType="pd" resultType="pd">
+        SELECT COUNT(t.id) datacount, CASE t.nmw_type WHEN 1 THEN '代买' WHEN 2 THEN '取送' WHEN 3 THEN '排队' WHEN 9 THEN '其它' END type from nmw_lq_order t WHERE 1=1
+        <if test="orderstatus != null and orderstatus !='' and orderstatus == 7">
+            AND t.`status` = 2
+        </if>
+        <if test="orderstatus != null and orderstatus !='' and orderstatus == 8">
+            AND t.`status` = -1
+        </if>
+        <if test="lastLoginEnd != '' and lastLoginEnd != null ">
+            AND t.create_time LIKE CONCAT(CONCAT('%', #{lastLoginEnd}),'%')
+        </if>
+        GROUP BY t.nmw_type
+    </select>
+
+    <!-- 觅优数据分析-->
+    <select id="queryMydata" parameterType="pd" resultType="pd">
+        SELECT COUNT(t.id) datacount, CASE t.order_type WHEN 1 THEN '即时单' WHEN 2 THEN '预约单' END type from nmw_miu_order t WHERE 1=1
+        <if test="orderstatus != null and orderstatus !='' and orderstatus == 7">
+            AND t.`status` = 9
+        </if>
+        <if test="orderstatus != null and orderstatus !='' and orderstatus == 8">
+            AND t.`status` = 10
+        </if>
+        <if test="lastLoginEnd != '' and lastLoginEnd != null ">
+            AND t.create_time LIKE CONCAT(CONCAT('%', #{lastLoginEnd}),'%')
+        </if>
+        GROUP BY t.order_type
+    </select>
+</mapper>

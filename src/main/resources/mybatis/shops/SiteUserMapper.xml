@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="SitUserMapper">
+
+    <resultMap type="Role" id="roleResultMap">
+        <id column="ROLE_ID" property="ROLE_ID"/>
+        <result column="ROLE_NAME" property="ROLE_NAME"/>
+        <result column="RIGHTS" property="RIGHTS"/>
+    </resultMap>
+
+    <sql id="tableName">
+        sys_user
+    </sql>
+    <sql id="roleTableName">
+        sys_role
+    </sql>
+
+    <!-- 用户列表 -->
+    <select id="siteUserlistPage" parameterType="page" resultType="pd" >
+        select  u.USER_ID,
+        u.USERNAME,
+        u.PASSWORD,
+        u.LAST_LOGIN,
+        u.NAME,
+        u.IP,
+        u.EMAIL,
+        u.NUMBER,
+        u.PHONE,
+        r.ROLE_ID,
+        r.ROLE_NAME,
+        n.bus_name
+        from <include refid="tableName"></include> u LEFT  join <include refid="roleTableName"></include> r
+        on u.ROLE_ID = r.ROLE_ID
+        left join nmw_alliance_business n on u.bus_id = n.id
+        where u.USERNAME != 'admin'
+        <if test="pd.keywords!= null and pd.keywords != ''"><!-- 关键词检索 -->
+            and
+            (
+            u.USERNAME LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+            or
+            u.EMAIL LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+            or
+            u.NUMBER LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+            or
+            u.NAME LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+            or
+            u.PHONE LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+            )
+        </if>
+        <if test="pd.ROLE_ID != null and pd.ROLE_ID != ''"><!-- 角色检索[查询家政事业部和特殊角色组下的所有用户和加盟商用户] modify by tankun 20160530  -->
+            and u.ROLE_ID IN (SELECT role_id FROM sys_role WHERE 1=1 AND PARENT_ID IN ('e6ac26f052124b999c81aa6a266fb10d','f332d1445df942f19312c787ff93a20e') OR ROLE_ID = 'da87f8a15f844b4db5fdab03214dc0e3')
+        </if>
+        <if test="pd.lastLoginStart!=null and pd.lastLoginStart!=''"><!-- 登录时间检索 -->
+            and u.LAST_LOGIN &gt;= #{pd.lastLoginStart}
+        </if>
+        <if test="pd.lastLoginEnd!=null and pd.lastLoginEnd!=''"><!-- 登录时间检索 -->
+            and u.LAST_LOGIN &lt;= #{pd.lastLoginEnd}
+        </if>
+        order by u.LAST_LOGIN desc
+    </select>
+
+    <!-- 根据商户id 查询已关联的用户 add by tankun 20160603-->
+    <select id="queryUserRelationBus" parameterType="pd" resultType="pd">
+        SELECT user_id FROM sys_user WHERE bus_id = #{old_bus_id}
+    </select>
+
+    <!-- 更新用户与商铺的关联关系 modify by tankun 20160603-->
+   <!-- <update id="updateUserRelationBus" parameterType="pd">
+        UPDATE sys_user SET bus_id = #{bus_id} where user_id IN
+        <foreach item="item" index="index" collection="user_ids" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>-->
+    <update id="updateUserRelationBus" parameterType="pd">
+        UPDATE sys_user SET bus_id = #{bus_id} where user_id = #{user_id}
+    </update>
+
+    <!--针对加盟商及加盟商用户管理-->
+    <!-- 列出此组下的角色 -->
+    <select id="listAllRolesByPId" resultMap="roleResultMap">
+        select ROLE_ID, ROLE_NAME, RIGHTS, PARENT_ID, ADD_QX, DEL_QX, EDIT_QX, CHA_QX
+        from
+        sys_role where
+        PARENT_ID = #{ROLE_ID}
+        <if test="userType !='' and userType == 1">
+            and role_id = 'da87f8a15f844b4db5fdab03214dc0e3'
+        </if>
+        <if test="userType !='' and userType == 2">
+            and role_id != 'da87f8a15f844b4db5fdab03214dc0e3'
+        </if>
+        ORDER BY ROLE_ID
+    </select>
+    <!-- 用户信息查询-->
+    <select id="queryUserById" parameterType="pd" resultType="pd">
+        select  *
+        from
+        sys_user
+        where
+        USER_ID = #{user_id}
+    </select>
+
+    <!-- fh313596790qq(青苔) -->
+</mapper>

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AtendanceMapper">
+	
+	<!--员工出勤 -->
+	<sql id="tableName">
+		nb_ondutydetails
+	</sql>
+
+    <!--员工基本信息表 -->
+    <sql id="yh_admintableName">
+        yh_admin
+    </sql>
+
+    <!--站点信息表 -->
+    <sql id="nb_sitetableName">
+        nb_site
+    </sql>
+    <sql id="nb_ondutytableName">
+        nb_onduty
+    </sql>
+
+	<!-- 员工出勤查询管理 -->
+	<select id="datalistcqPage" parameterType="com.fh.util.PageData" resultType="pd">
+        SELECT empid, realname, site_name, ondate, GROUP_CONCAT(order_id) order_id, GROUP_CONCAT(IFNULL(order_id2, 0)) order_id2, GROUP_CONCAT( CONCAT(onstarttime, "|", onendtime)) onstarttime, GROUP_CONCAT(onremark) onremark FROM (
+        SELECT t.order_id,t.empid,t.ondate,t.onstarttime,t.onendtime,t.onremark,t.order_id2,b.realname,c.site_name FROM <include refid="tableName"></include> t LEFT JOIN <include refid="yh_admintableName"></include> b ON t.EMPID = b.username
+        LEFT JOIN <include refid="nb_sitetableName"></include> c ON b.belongunit = c.site_sid
+        LEFT JOIN account_role a ON b.id = a.account_id
+        WHERE t.ONSTATUS=1
+        AND b. status_is = 'Y' AND a.account_id IS NOT NULL AND a.role_id = 8
+		<if test="keywords!= null and keywords != ''"><!-- 关键词检索 -->
+			and
+				(
+				<!--	根据需求自己加检索条件 -->
+                t.order_id2 LIKE CONCAT(CONCAT('%', #{keywords}),'%')
+                OR
+                t.empid LIKE CONCAT(CONCAT('%', #{keywords}),'%')
+                OR
+                b.realname LIKE CONCAT(CONCAT('%', #{keywords}),'%')
+                OR
+                c.site_name LIKE CONCAT(CONCAT('%', #{keywords}),'%')
+				)
+		</if>
+        <if test="siteSid != null and siteSid.length > 0">
+            AND b.belongunit IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            and t.ondate &gt;= #{lastLoginStart}
+        </if>
+        <if test="lastLoginEnd!=null and lastLoginEnd!=''">
+            and t.ondate &lt;= #{lastLoginEnd}
+        </if>
+        AND  t.empid IS  NOT NULL
+        GROUP BY t.EMPID ,t.ondate,t.onstarttime,t.onendtime
+        ORDER BY t.ondate DESC ) n GROUP BY n.empid,n.ondate,n.realname
+        ORDER BY n.ondate DESC
+    </select>
+
+    <!-- 员工出勤总览管理查询 在职员工且为技师-->
+    <select id="onDutydatalistcqPage" parameterType="com.fh.util.PageData" resultType="pd">
+          SELECT t.empid, t.ondate, t.onstarttime, t.onendtime, t.isworking, t.onremark, a.realname, b.site_sid, b.site_name,CASE a.xb WHEN 1 THEN '男' WHEN 2 THEN '女' ELSE '未知' END sex
+            FROM <include refid="nb_ondutytableName"></include> t LEFT JOIN <include refid="yh_admintableName"></include> a ON t.EMPID = a.username LEFT JOIN <include refid="nb_sitetableName"></include> b ON a.belongunit = b.site_sid
+            LEFT JOIN account_role c ON a.id = c.account_id
+            WHERE 1 = 1 AND t.ONSTATUS = 1 AND t.EMPID IS NOT NULL
+            AND a. status_is = 'Y' AND c.account_id IS NOT NULL AND c.role_id = 8
+            <if test="keywords!= null and keywords != ''"><!-- 关键词检索 -->
+                and
+                (
+                <!--	根据需求自己加检索条件 -->
+                t.empid LIKE CONCAT(CONCAT('%', #{keywords}),'%')
+                OR
+                a.realname LIKE CONCAT(CONCAT('%', #{keywords}),'%')
+                OR
+                b.site_name LIKE CONCAT(CONCAT('%', #{keywords}),'%')
+                )
+            </if>
+            <if test="siteSid != null and siteSid.length > 0">
+                AND a.belongunit IN
+                <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                    #{item,jdbcType=VARCHAR}
+                </foreach>
+            </if>
+            <if test="lastLoginStart !=null and lastLoginStart !=''">
+                and t.ondate &gt;= #{lastLoginStart}
+            </if>
+            <if test="lastLoginEnd!=null and lastLoginEnd!=''">
+                and t.ondate &lt;= #{lastLoginEnd}
+            </if>
+            GROUP BY t.EMPID, t.ONDATE
+            ORDER BY t.ONDATE DESC, t.EMPID
+    </select>
+	<!-- fh313596790qq(青苔) -->
+</mapper>

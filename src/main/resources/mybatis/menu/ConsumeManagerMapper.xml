@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ConsumeManagerMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		menu_consume_manager
+	</sql>
+	
+	<!-- 字段 -->
+	<sql id="Field">
+		id,
+		user_id,	
+		user_name,	
+		user_phone,	
+		consum_time,	
+		people_num,	
+		pay_money,	
+		discount_money,	
+		consum_desc
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{id},
+		#{user_id},	
+		#{user_name},	
+		#{user_phone},	
+		#{consum_time},	
+		#{people_num},	
+		#{pay_money},	
+		#{discount_money},	
+		#{consum_desc}
+	</sql>
+	
+	
+	<sql id="consumerManagerDynamicWhere">
+		<!-- ognl访问静态方法的表达式 为@class@method(args),以下为调用rapid中的Ognl.isNotEmpty()方法,还有其它方法如isNotBlank()可以使用，具体请查看Ognl类 -->
+		<where>
+				<if test="id!=null">
+					and id = #{id}
+				</if>
+				<if test="user_id!=null">
+					and user_id = #{user_id}
+				</if>
+				<if test="user_name!=null and user_name!=''">
+					and user_name = #{user_name}
+				</if>
+				<if test="user_phone!=null">
+					and user_phone = #{user_phone}
+				</if>
+		       <if test="consum_time!=null and consum_time!=''">
+					and consum_time = #{consum_time}
+				</if>
+		       <if test="pay_money!=null and pay_money!=''">
+					and pay_money = #{pay_money}
+				</if>
+				<if test="create_by!=null">
+					and create_by = #{create_by}
+				</if>
+				<if test="create_time!=null">
+					and create_time = #{create_time}
+				</if>
+		</where>
+	</sql>
+	
+	<!-- 新增-->
+	<insert id="save" parameterType="pd">
+		insert into
+	<include refid="tableName"></include>
+		(
+		user_id,
+		user_name,
+		user_phone,
+		consum_time,
+		people_num,
+		pay_money,
+		discount_money,
+		consum_desc,
+		create_by,
+		create_time
+		) values (
+		#{user_id},
+		#{user_name},
+		#{user_phone},
+		#{consum_time},
+		#{people_num},
+		#{pay_money},
+		#{discount_money},
+		#{consum_desc},
+		#{create_by},
+		#{create_time}
+		)
+	</insert>
+	
+	<!-- 删除-->
+	<delete id="delete" parameterType="pd">
+		delete from
+		<include refid="tableName"></include>
+		where
+		id = #{id}
+	</delete>
+	
+	<!-- 修改 -->
+	<update id="edit" parameterType="pd">
+		update
+		<include refid="tableName"></include>
+		set 
+			user_id = #{user_id},
+			user_name = #{user_name},
+			user_phone = #{user_phone},
+			consum_time = #{consum_time},
+			people_num = #{people_num},
+			pay_money = #{pay_money},
+			discount_money = #{discount_money},
+			consum_desc = #{consum_desc},
+			modify_by = #{modify_by},
+			modify_time = #{modify_time}
+		where
+		id = #{id}
+	</update>
+	
+	<!-- 通过ID获取数据 -->
+	<select id="findById" parameterType="pd" resultType="pd">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where
+		id = #{id}
+	</select>
+	
+	<!-- 根据参数信息查询数据详情 -->
+	<select id="findByParam" parameterType="pd" resultType="pd">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		<include refid="consumerManagerDynamicWhere"/> 
+	</select>
+	
+	
+	<!-- 列表 -->
+	<select id="datalistPage" parameterType="page" resultType="pd">
+		SELECT t.* FROM menu_consume_manager t
+		LEFT JOIN menu_user_info a ON t.user_id = a.id
+		WHERE 1=1
+		<if test="pd.keywords!= null and pd.keywords != ''"><!-- 关键词检索 -->
+			and
+				(
+					a.user_name LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					 or 
+					a.phone  LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+				)
+		</if>
+		<if test="pd.group_type !=null and pd.group_type !=''">
+			AND a.group_type = #{pd.group_type}
+		</if>
+		<if test="pd.member_type !=null and pd.member_type !=''">
+			AND a.member_type = #{pd.member_type}
+		</if>
+		<if test="pd.lastLoginStart !=null and pd.lastLoginStart !=''">
+			and t.consum_time &gt;= #{lastLoginStart}
+		</if>
+		<if test="pd.lastLoginEnd !=null and pd.lastLoginEnd !=''">
+			and t.consum_time &lt;= #{lastLoginEnd}
+		</if>
+		ORDER  BY id DESC
+	</select>
+	
+	<!-- 列表(全部) -->
+	<select id="listAll" parameterType="pd" resultType="pd">
+		select
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+	</select>
+	
+	<!-- 消费记录列表  根据消费者消费基本信息录入获取其消费主键id-->
+	<select id="listConsumerFood" parameterType="pd" resultType="pd">
+		SELECT
+		t.id,
+		t.consum_id,
+		t.note,
+		b.id foodId,
+		b.menu_name foodName,
+		c.cuisine_name cuisName,
+		d.food_type_name typeName
+	FROM
+		menu_consum_food_log t
+	LEFT JOIN menu_consume_manager a ON t.consum_id = a.id
+	LEFT JOIN menu_food_info b ON b.id = t.food_id
+	LEFT JOIN menu_cuisine c ON c.id = b.cuisine_id
+	LEFT JOIN menu_type d ON d.id = b.type_id
+	WHERE t.consum_id = #{id}
+	</select>
+	
+	<!-- 批量删除 -->
+	<delete id="deleteAll" parameterType="String">
+		delete from
+		<include refid="tableName"></include>
+		where
+		id in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+                 #{item}
+		</foreach>
+	</delete>
+
+</mapper>

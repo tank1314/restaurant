@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="InvoiceDataMapper">
+
+    <!-- 发票管理列表 -->
+    <select id="invoicedatalistPage" parameterType="page" resultType="pd">
+        SELECT a.realname,a.mobile ,t.id,t.uid,t.invoice_sn,FORMAT(t.amount/100,2) amount ,t.title,t.content,t.receiver,t.tel,t.district,t.address,t.`status`,t.express_no,t.express_comp,FORMAT(express_fee,2) express_fee,DATE_FORMAT(t.create_time,'%Y-%m-%d %H:%m:%s') create_time,t.propose_explain,t.auditor,t.audit_time,t.audit_explain,t.nmw_invoice_code
+        FROM nmw_invoice t LEFT JOIN yh_user a
+        ON t.uid = a.id WHERE  1=1
+        <if test="pd.keywords!= null and pd.keywords != ''"><!-- 关键词检索 -->
+            AND
+            (
+            <!-- 根据需求自己加检索条件 -->
+            t.title LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+            OR
+            t.receiver LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+            OR
+            t.tel LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+            OR
+            t.uid LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+            )
+        </if>
+        <if test="pd.lastLoginStart !=null and pd.lastLoginStart !=''">
+            AND  DATE_FORMAT(t.create_time,'%Y-%m-%d') &gt;= #{pd.lastLoginStart}
+        </if>
+        <if test="pd.lastLoginEnd !=null and pd.lastLoginEnd !=''">
+            AND  DATE_FORMAT(t.create_time,'%Y-%m-%d') &lt;= #{pd.lastLoginEnd}
+        </if>
+        <if test="pd.status !=null and pd.status !=''">
+            AND  t.`status`= #{pd.status}
+        </if>
+        ORDER BY t.create_time DESC
+    </select>
+
+	<select id="findNoticeById" parameterType="pd" resultType="pd">
+        SELECT a.realname,a.mobile ,t.id,t.uid,t.invoice_sn,FORMAT(t.amount/100,2) amount ,t.title,t.content,t.receiver,t.tel,t.district,t.address,t.`status` status ,t.express_no,t.express_comp,FORMAT(express_fee,2) express_fee,DATE_FORMAT(t.create_time,'%Y-%m-%d %H:%m:%s') create_time,t.propose_explain,t.auditor,t.audit_time,t.audit_explain,t.nmw_invoice_code
+        FROM nmw_invoice t LEFT JOIN yh_user a
+        ON t.uid = a.id WHERE  1=1
+        AND
+		t.id = #{id}
+    </select>
+
+    <!-- 编辑审核状态 | 配送状态 -->
+    <update id="editNoticeStatus" parameterType="pd" >
+        UPDATE nmw_invoice
+        set
+        <if test="status !=null and status !='' and status !=4">
+            auditor = #{auditor},
+            audit_time = #{audit_time},
+            audit_explain = #{audit_explain},
+            nmw_invoice_code = #{nmw_invoice_code},
+        </if>
+        status = #{status}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 编辑快递信息 -->
+    <update id="editNoticeexpress" parameterType="pd" >
+        UPDATE nmw_invoice
+        set
+        status = 2,
+        express_no = #{express_no},
+        express_comp = #{express_comp},
+        express_fee = #{express_fee},
+        receiver = #{receiver},
+        tel = #{tel},
+        district = #{district},
+        address = #{address},
+        express_by = #{express_by},
+        express_time = #{express_time}
+        WHERE id = #{id}
+    </update>
+	
+	<!-- fh313596790qq(青苔) -->
+</mapper>

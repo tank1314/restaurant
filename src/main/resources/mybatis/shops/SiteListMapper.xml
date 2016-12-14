@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="SitListMapper">
+    <sql id="tableName">
+        nb_site
+    </sql>
+
+    <!-- modify by tankun 20160612 门店列表(管理员) 剔除 区域分类 城市分类-->
+    <select id="datalistPage" parameterType="page" resultType="pd">
+        SELECT t.service_type, t.site_sid, t.site_name, t.sitemaster_id, t.site_area, t.province, t.city, t.area, t.street, t.sitecode, t.siteaddress, t.log, t.lot, t.create_date, t.site_status, t.site_type, t.distribute_type, t.catagory, t.bus_id, b.bus_name
+        FROM nb_site t LEFT JOIN nmw_alliance_business b ON t.bus_id = b.id
+        WHERE t.SITE_STATUS = 1 AND t.site_type NOT IN ('01', '02')
+        <if test="pd.keywords!= null and pd.keywords != ''"><!-- 关键词检索 -->
+            and
+            (
+            <!--	根据需求自己加检索条件 -->
+            t.SITE_NAME LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+            OR
+            t.site_sid LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+            OR
+            t.sitecode LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+            )
+        </if>
+        <if test="pd.city2!=null and pd.city2!=''">
+            and t.city2 = #{pd.city2}
+        </if>
+        <if test="pd.site_type!=null and pd.site_type!=''">
+            and t.site_type = #{pd.site_type}
+        </if>
+        <if test="pd.distribute_type != null and pd.distribute_type != ''">
+            and t.distribute_type = #{pd.distribute_type}
+        </if>
+        <if test="pd.bus_id == 1 and pd.bus_id !='' ">
+            and t.bus_id is not null
+        </if>
+        <if test="pd.bus_id == 0 and pd.bus_id !='' ">
+            and t.bus_id is null
+        </if>
+        <if test="pd.service_type!=null and pd.service_type!=''">
+            and t.service_type = #{pd.service_type}
+        </if>
+        ORDER  BY t.SITE_ID desc
+    </select>
+
+    <!-- 更新站点与商铺的关联关系 -->
+    <update id="updateSiteRelationBus" parameterType="pd">
+        UPDATE nb_site SET bus_id = #{bus_id} where SITE_SID = #{site_sid}
+    </update>
+
+    <update id="updateSiteRelationServiceType" parameterType="pd">
+        UPDATE nb_site SET service_type = #{service_type} where SITE_SID = #{site_sid}
+    </update>
+
+    <!-- 1、门店关联跳转  2、根据商户id查询商户下是否有站点关联 -->
+    <select id="findSiteById" parameterType="pd" resultType="pd">
+        SELECT service_type,site_sid,site_name,sitemaster_id,site_area,province,city,area,street,sitecode,siteaddress,log,lot,create_date,site_status,site_type,distribute_type,catagory,bus_id
+        from nb_site where 1=1
+        <if test="site_sid!=null and site_sid!=''">
+            and site_sid = #{site_sid}
+        </if>
+        <if test="bus_id!=null and bus_id!=''">
+            and bus_id = #{bus_id}
+        </if>
+    </select>
+    <!-- 加盟商门店列表查询 add by tankun 20160606-->
+    <select id="querySitebyBusdatalistPage" parameterType="page" resultType="pd">
+        SELECT CASE t.service_type WHEN '1' THEN '家政' WHEN '2' THEN '跑腿' WHEN '3' THEN '出行' WHEN '4' THEN '洗衣' END service_type, t.site_sid, t.site_name, t.sitemaster_id, t.site_area, t.province, t.city, t.area, t.street, t.sitecode, t.siteaddress, t.log, t.lot, t.create_date, t.site_status, t.site_type, t.distribute_type, t.catagory, t.bus_id, b.bus_name
+        FROM nb_site t LEFT JOIN nmw_alliance_business b ON t.bus_id = b.id
+        WHERE t.SITE_STATUS = 1 AND t.bus_id != 0
+        AND t.bus_id = #{pd.bus_id,jdbcType=NUMERIC}
+        ORDER BY t.create_date desc
+    </select>
+
+	<!-- fh313596790qq(青苔) -->
+</mapper>

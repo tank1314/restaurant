@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MenuTypeMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		menu_type
+	</sql>
+	
+	<!-- 字段 -->
+	<sql id="Field">
+		id,
+		food_type_name,
+		lifecycle,	
+		create_by,	
+		create_time,	
+		modify_by,	
+		modify_time
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{id},
+		#{food_type_name},
+		#{lifecycle},	
+		#{create_by},	
+		#{create_time},	
+		#{modify_by},	
+		#{modify_time}
+	</sql>
+	
+	<!-- 新增-->
+	<insert id="save" parameterType="pd">
+		insert into 
+	<include refid="tableName"></include>
+		(
+		food_type_name,
+		lifecycle,
+		create_by,
+		create_time
+		) values (
+		#{food_type_name},
+		#{lifecycle},
+		#{create_by},
+		#{create_time}
+		)
+	</insert>
+	
+	<!-- 删除-->
+	<delete id="delete" parameterType="pd">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			id = #{id}
+	</delete>
+	
+	<!-- 修改 -->
+	<update id="edit" parameterType="pd">
+		update
+		<include refid="tableName"></include>
+		set
+			<if test="lifecycle != 2">
+				food_type_name = #{food_type_name},
+			</if>
+			lifecycle = #{lifecycle},
+			modify_by = #{modify_by},
+			modify_time = #{modify_time}
+		where 
+		id = #{id}
+	</update>
+	
+	<!-- 通过ID获取数据 -->
+	<select id="findById" parameterType="pd" resultType="pd">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 
+			id = #{id}
+	</select>
+	
+	<!-- 列表 -->
+	<select id="datalistPage" parameterType="page" resultType="pd">
+		select
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 1=1
+		<if test="pd.keywords!= null and pd.keywords != ''"><!-- 关键词检索 -->
+			and
+				(
+				<!--	根据需求自己加检索条件 -->
+				food_type_name LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+				)
+		</if>
+		<if test="pd.lifecycle !=null and pd.lifecycle !=''">
+			AND lifecycle = #{pd.lifecycle}
+		</if>
+		AND lifecycle !=2
+		ORDER  BY id DESC
+	</select>
+	
+	<!-- 列表(全部) -->
+	<select id="listAll" parameterType="pd" resultType="pd">
+		select
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where lifecycle = 1
+	</select>
+	
+	<!-- 批量删除 -->
+	<delete id="deleteAll" parameterType="String">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			id in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+                 #{item}
+		</foreach>
+	</delete>
+
+</mapper>

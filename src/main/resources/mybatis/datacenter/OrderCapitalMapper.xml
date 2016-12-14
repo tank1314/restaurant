@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="OrderCapitalMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		nmw_order
+	</sql>
+	
+	<!-- 字段 -->
+	<sql id="Field">
+		header,	
+		month_proportion,
+		weixin,	
+		alipay,	
+		xiaoniu_alipay,	
+		shangmen,	
+		hezuo,	
+		month_sum,	
+		OrderCapital_ID
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{header},	
+		#{month_proportion},
+		#{weixin},	
+		#{alipay},	
+		#{xiaoniu_alipay},	
+		#{shangmen},	
+		#{hezuo},	
+		#{month_sum},	
+		#{OrderCapital_ID}
+	</sql>
+	
+	<!-- 新增-->
+	<insert id="save" parameterType="pd">
+		insert into 
+	<include refid="tableName"></include>
+		(
+	<include refid="Field"></include>
+		) values (
+	<include refid="FieldValue"></include>
+		)
+	</insert>
+	
+	<!-- 删除-->
+	<delete id="delete" parameterType="pd">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			OrderCapital_ID = #{OrderCapital_ID}
+	</delete>
+	
+	<!-- 修改 -->
+	<update id="edit" parameterType="pd">
+		update
+		<include refid="tableName"></include>
+		set 
+		OrderCapital_ID = OrderCapital_ID
+		where 
+		OrderCapital_ID = #{OrderCapital_ID}
+	</update>
+	
+	<!-- 通过ID获取数据 -->
+	<select id="findById" parameterType="pd" resultType="pd">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 
+			OrderCapital_ID = #{OrderCapital_ID}
+	</select>
+	
+	<!-- 列表 -->
+	<select id="datalistPage" parameterType="page" resultType="pd">
+		select
+	-- 			pay_source as header,
+	-- 			sum(pay_money) as  month_proportion,
+	-- 			count(0) as weixin,
+	-- 			cast(avg(pay_money)as signed) as alipay
+			_pay_source as pay_source,
+			case _pay_source
+				when 'wallet' then '钱包'
+				when 'weixin' then '微信'
+				when 'shangmen' then '上门'
+				when 'alipay' then '支付宝'end  as pay_source_str,
+			sum(pay_money) as pay_money,
+			count(0) as count,
+			cast(avg(pay_money) as signed)  as avg_pay_money
+		from (
+			select
+				*,
+				case pay_source when 'xiaoniu_alipay' then 'alipay' else pay_source end  as _pay_source
+			from nmw_order
+			where
+				order_status=7
+				<if test="pd.start_day_start!=null and pd.start_day_start!=''"><![CDATA[
+						and start_day>=#{pd.start_day_start,jdbcType=VARCHAR}
+			]]></if>
+				<if test="pd.start_day_end!=null and pd.start_day_end!=''"><![CDATA[
+				 		and start_day<=#{pd.start_day_end,jdbcType=VARCHAR}
+			]]></if>
+
+			and pay_source!=''
+			and is_cancel=0
+			<if test="pd.citys!=null and pd.citys!=''">
+				and city_id in (${pd.citys})
+			</if>
+			-- and pay_status=1
+		) as os7
+		where 1=1
+		GROUP BY os7._pay_source
+		ORDER BY _pay_source DESC
+	</select>
+	<select id="datalistPage4Week" parameterType="page" resultType="pd">
+		select
+			weeks,
+			count(0) as days,
+			sum(day_pay_money) as pay_money,
+			sum(day_count) as count,
+			cast(sum(day_count)/count(0)as signed) as day_count,
+			cast(sum(day_pay_money)/sum(day_count)as signed) as avg_pay_money,
+			avg(day_count) as avg_count
+		from (
+			select
+				*,
+				sum(pay_money) as day_pay_money,
+				count(0) as day_count,
+				avg(pay_money)  as day_avg_pay_money,
+				<![CDATA[
+					case
+					when start_day>=#{pd.week1_start,jdbcType=VARCHAR} and start_day<#{pd.week1_end,jdbcType=VARCHAR} then 1
+					when start_day>=#{pd.week2_start,jdbcType=VARCHAR} and start_day<#{pd.week2_end,jdbcType=VARCHAR} then 2
+					when start_day>=#{pd.week3_start,jdbcType=VARCHAR} and start_day<#{pd.week3_end,jdbcType=VARCHAR} then 3
+					when start_day>=#{pd.week4_start,jdbcType=VARCHAR} and start_day<#{pd.week4_end,jdbcType=VARCHAR} then 4
+				]]>
+				else 5
+				end as weeks
+			from nmw_order
+			where
+				order_status=7
+				<if test="pd.start_day_start!=null and pd.start_day_start!=''"><![CDATA[
+					and start_day>=#{pd.start_day_start,jdbcType=VARCHAR}
+				 ]]></if>
+				<if test="pd.start_day_end!=null and pd.start_day_end!=''"><![CDATA[
+					and start_day<=#{pd.start_day_end,jdbcType=VARCHAR}
+				]]></if>
+				and pay_source!=''
+				and is_cancel=0
+				<if test="pd.citys!=null and pd.citys!=''">
+					and city_id in (${pd.citys})
+				</if>
+			-- and pay_status=1
+			GROUP BY start_day
+		) as os7
+		where 1=1
+		GROUP BY os7.weeks
+		ORDER BY weeks
+	</select>
+
+	<select id="queryRecoverCount"  parameterType="page" resultType="pd">
+		select
+			count(0) as count
+		from (
+			select
+				count(0) as count
+			from (
+				select
+					*
+				from nmw_order
+				where
+					order_status=7
+					<if test="pd.start_day_start!=null and pd.start_day_start!=''"><![CDATA[
+						and start_day>=#{pd.start_day_start,jdbcType=VARCHAR}
+					]]></if>
+					<if test="pd.start_day_end!=null and pd.start_day_end!=''"><![CDATA[
+						and start_day<=#{pd.start_day_end,jdbcType=VARCHAR}
+					]]></if>
+					and pay_source!=''
+					and is_cancel=0
+					<if test="pd.citys!=null and pd.citys!=''">
+						and city_id in (${pd.citys})
+					</if>
+			) o
+			LEFT JOIN yh_user u on o.uid=u.id
+			where 1=1
+			GROUP BY u.id
+			HAVING count>=#{pd.count,jdbcType=INTEGER}
+		) u_o
+	</select>
+	<!-- 列表(全部) -->
+	<select id="listAll" parameterType="pd" resultType="pd">
+		select
+			pay_source as header,
+			sum(pay_money) as  month_proportion,
+			count(0) as weixin,
+			cast(avg(pay_money)as signed) as alipay,
+			'1' as xiaoniu_alipay,
+			'2' as shangmen,
+			'3' as hezuo,
+			'4' as month_sum,
+			1 as OrderCapital_ID
+
+			-- pay_source,
+			-- sum(pay_money) as pay_money,
+			-- count(0) as count,
+			-- cast(avg(pay_money) as signed)  as avg_pay_money
+		from (
+			select
+			*
+			from nmw_order
+			where
+				order_status=7
+				<![CDATA[
+					and start_day>=#{start_day_start,jdbcType=VARCHAR}
+					and start_day<=#{start_day_end,jdbcType=VARCHAR}
+				]]>
+				and pay_source!=''
+				and is_cancel=0
+				<if test="pd.citys!=null and pd.citys!=''">
+					and city_id in (${pd.citys})
+				</if>
+			-- and pay_status=1
+		) as os7
+		where 1=1
+		GROUP BY os7.pay_source
+		ORDER BY pay_money DESC
+	</select>
+	
+	<!-- 批量删除 -->
+	<delete id="deleteAll" parameterType="String">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			OrderCapital_ID in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+                 #{item}
+		</foreach>
+	</delete>
+	
+	<!-- fh313596790qq(青苔) -->
+</mapper>

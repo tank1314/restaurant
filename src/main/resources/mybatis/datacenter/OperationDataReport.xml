@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="OperationDataMapper">
+
+  <!-- 运营数据分析 -->
+	<select id="queryOperationData" parameterType="page" resultType="pd">
+        SELECT * FROM nmw_month_data ORDER BY `month` DESC
+	</select>
+
+    <!--  总用户数 根据月份查询 -->
+    <select id="queryAllUserData" parameterType="pd" resultType="pd">
+        SELECT COUNT(1) datacount FROM yh_user WHERE date_format(FROM_UNIXTIME(create_time) ,'%Y-%m' ) &lt;= #{currentDate}
+    </select>
+
+    <!-- 新用户数 -->
+    <select id="queryNewUserData" parameterType="pd" resultType="pd">
+        SELECT date_format(FROM_UNIXTIME(create_time) ,'%Y-%m' ) time,COUNT(1) datacount FROM yh_user GROUP BY date_format(FROM_UNIXTIME(create_time) ,'%Y-%m' ) ORDER BY time DESC LIMIT 2
+    </select>
+
+    <!-- 预约订单数-->
+    <select id="queryYyOrderData" parameterType="pd" resultType="pd">
+        SELECT DATE_FORMAT(create_time,'%Y-%m') time,COUNT(1) datacount FROM nmw_order GROUP BY DATE_FORMAT(create_time,'%Y-%m') ORDER BY time DESC LIMIT 2
+    </select>
+
+    <!-- 服务订单数-->
+    <select id="queryServiceOrderData" parameterType="pd" resultType="pd">
+        SELECT DATE_FORMAT(start_day,'%Y-%m') time,COUNT(1) datacount  FROM nmw_order WHERE order_status = 7 GROUP BY DATE_FORMAT(start_day,'%Y-%m') ORDER BY time DESC LIMIT 2
+    </select>
+
+    <!-- 使用用户-->
+    <select id="queryCurrentMonthSyData" parameterType="pd" resultType="pd">
+        SELECT COUNT(1) datacount FROM (SELECT COUNT(0) datacount FROM
+        (SELECT * FROM nmw_order WHERE order_status = 7 AND DATE_FORMAT(start_day,'%Y-%m') = #{currentDate}
+        AND pay_source != '' AND is_cancel = 0 ) o
+        LEFT JOIN yh_user u ON o.uid = u.id WHERE 1 = 1 GROUP BY u.id HAVING datacount >= 1) t
+    </select>
+
+    <!-- 复购用户-->
+    <select id="queryCurrentMonthFgData" parameterType="pd" resultType="pd">
+        SELECT COUNT(1) datacount FROM (SELECT COUNT(0) datacount FROM
+        (SELECT * FROM nmw_order WHERE order_status = 7 AND DATE_FORMAT(start_day,'%Y-%m') = #{currentDate}
+        AND pay_source != '' AND is_cancel = 0 ) o
+        LEFT JOIN yh_user u ON o.uid = u.id WHERE 1 = 1 GROUP BY u.id HAVING datacount >= 2 ) t
+    </select>
+
+
+
+
+    <!-- 新用户 -->
+    <select id="queryNewUserByCity" parameterType="pd" resultType="pd">
+        SELECT COUNT(1) datacount,t.city_name city,date_format(FROM_UNIXTIME(a.create_time) ,'%Y-%m' ) time FROM nmw_order t LEFT JOIN yh_user a ON t.uid = a.id
+        WHERE t.order_status = 7 AND t.pay_source != '' AND t.is_cancel = 0
+        GROUP BY t.city_name,date_format(FROM_UNIXTIME(a.create_time) ,'%Y-%m' ) ORDER BY time DESC
+    </select>
+
+    <!-- 使用用户 -->
+    <select id="querySyUserByCity" parameterType="pd" resultType="pd">
+        SELECT COUNT(1) datacount,c.city city, time FROM
+        (SELECT COUNT(0) ordercount, u.id, o.city_name city,o.time FROM
+        (SELECT uid,city_name,DATE_FORMAT(start_day,'%Y-%m') time FROM nmw_order
+        WHERE order_status = 7 AND pay_source != '' AND is_cancel = 0 ) o
+        LEFT JOIN yh_user u ON o.uid = u.id WHERE 1 = 1 GROUP BY u.id,o.city_name,o.time HAVING ordercount >= 1 ) c GROUP BY c.city,c.time ORDER BY time DESC
+    </select>
+
+    <!-- 复购用户数-->
+    <select id="queryFgUserByCity" parameterType="pd" resultType="pd">
+        SELECT COUNT(1) datacount,c.city city, time FROM
+        (SELECT COUNT(0) ordercount,o.city_name city,o.time FROM
+        (SELECT uid,city_name,DATE_FORMAT(start_day,'%Y-%m') time FROM nmw_order WHERE order_status = 7
+        AND pay_source != '' AND is_cancel = 0 ) o
+        LEFT JOIN yh_user u ON o.uid = u.id WHERE 1 = 1 GROUP BY u.id,o.city_name,o.time HAVING ordercount >= 2 ) c GROUP BY c.city,time ORDER BY time DESC
+    </select>
+
+    <!-- 预约订单数-->
+    <select id="queryYyUserByCity" parameterType="pd" resultType="pd">
+        SELECT  DATE_FORMAT(create_time,'%Y-%m') time,COUNT(1) datacount,city_name city  FROM nmw_order
+        GROUP BY DATE_FORMAT(create_time,'%Y-%m'),city_name ORDER BY time DESC
+    </select>
+
+    <!-- 服务订单数-->
+    <select id="queryFwUserByCity" parameterType="pd" resultType="pd">
+        SELECT DATE_FORMAT(start_day,'%Y-%m') time,COUNT(1) datacount,city_name city  FROM nmw_order WHERE order_status = 7 AND pay_source != '' AND is_cancel = 0
+        GROUP BY DATE_FORMAT(start_day,'%Y-%m'),city_name ORDER BY time DESC
+    </select>
+
+
+    <!-- 复购用户按年分析汇总 add by tankun 20160627-->
+    <select id="queryCurrentMonthFgDataByYearStr" parameterType="pd" resultType="pd">
+        SELECT COUNT(0) ordercount FROM
+        (SELECT uid,city_name,COUNT(0) ordercount  FROM nmw_order
+        WHERE order_status = 7
+        AND DATE_FORMAT(start_day,'%Y') = #{currentDate}
+        <if test="siteSid != null and siteSid.length > 0">
+            AND city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        AND pay_source != '' AND is_cancel = 0 GROUP BY uid,city_name HAVING ordercount >= 1 ) c
+        UNION ALL
+        SELECT COUNT(0) ordercount FROM
+        (
+        SELECT uid,city_name,COUNT(0) datacount FROM v_old_order_info WHERE is_cancel = 0
+        AND DATE_FORMAT(start_day,'%Y') = #{currentDate}
+        AND start_day &lt;= '2016-02-29'
+        <if test="siteSid != null and siteSid.length > 0">
+            AND city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        GROUP BY uid HAVING datacount >= 1 ) t
+    </select>
+
+    <!-- 复购用户按月分析汇总  add by tankun 20160627-->
+    <select id="queryCurrentMonthFgDataByMonthStr" parameterType="pd" resultType="pd">
+        SELECT COUNT(0) ordercount FROM
+        (SELECT uid,city_name,COUNT(0) ordercount  FROM nmw_order
+        WHERE order_status = 7
+        AND DATE_FORMAT(start_day,'%Y-%m') = #{currentDate}
+        <if test="siteSid != null and siteSid.length > 0">
+            AND city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        AND pay_source != '' AND is_cancel = 0 GROUP BY uid,city_name HAVING ordercount >= 1 ) c
+        UNION ALL
+        SELECT COUNT(0) ordercount FROM
+        (
+        SELECT uid,city_name,COUNT(0) datacount FROM v_old_order_info WHERE is_cancel = 0
+        AND DATE_FORMAT(start_day,'%Y-%m') = #{currentDate}
+        AND start_day &lt;= '2016-02-29'
+        <if test="siteSid != null and siteSid.length > 0">
+            AND city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        GROUP BY uid HAVING datacount >= 1 ) t
+    </select>
+
+    <!-- 累计注册用户数-->
+    <select id="queryResigerUserCount" parameterType="pd" resultType="pd">
+        SELECT COUNT(1) datacount FROM yh_user ;
+    </select>
+
+    <!-- 累计服务完成用户数 -->
+    <select id="queryServiceCompleteUserCount" parameterType="pd" resultType="pd">
+        SELECT SUM(ordercount) datacount FROM(
+        SELECT COUNT(0) ordercount FROM
+        (SELECT uid,COUNT(0) ordercount  FROM nmw_order
+        WHERE order_status = 7
+        AND pay_source != '' AND is_cancel = 0 GROUP BY uid HAVING ordercount >= 1 ) c
+        UNION ALL
+        SELECT COUNT(0) ordercount FROM(
+        SELECT uid,COUNT(0) datacount FROM v_old_order_info WHERE is_cancel = 0
+        AND start_day &lt;= '2016-02-29'
+        GROUP BY uid HAVING datacount >= 1 ) t ) a
+    </select>
+
+</mapper>

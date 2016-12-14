@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CustAnalyDataMapper">
+  <!-- 用户国籍分析 -->
+	<select id="queryCustForeign" parameterType="pd" resultType="pd">
+        SELECT count(t.is_foreigner) datacount,CASE t.is_foreigner WHEN 0 THEN '中国' WHEN 1 THEN '外国' END is_foreign,'国籍' nation FROM nmw_yh_info t LEFT JOIN nmw_order a ON t.order_id = a.id
+        LEFT JOIN nb_site b ON a.site_id = b.SITE_ID
+        <!--WHERE b.bus_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>-->
+        GROUP BY t.is_foreigner
+	</select>
+
+    <!-- 宠物数据分析-->
+    <select id="queryCustPet" parameterType="pd" resultType="pd">
+        SELECT count(t.pet) datacount,t.pet FROM nmw_yh_info t LEFT JOIN nmw_order a ON t.order_id = a.id
+        LEFT JOIN nb_site b ON a.site_id = b.SITE_ID
+        <!--WHERE b.bus_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>-->
+        GROUP BY t.pet
+    </select>
+
+    <!-- 年龄段数据分析-->
+    <select id="queryCustAge" parameterType="pd" resultType="pd">
+        SELECT count(t.age) datacount,t.age FROM nmw_yh_info t LEFT JOIN nmw_order a ON t.order_id = a.id
+        LEFT JOIN nb_site b ON a.site_id = b.SITE_ID
+        WHERE t.age is not null
+       <!-- WHERE b.bus_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>-->
+        GROUP BY t.age
+        ORDER BY t.age
+    </select>
+
+    <!-- 年龄段数据分析-->
+    <select id="queryCustFamily" parameterType="pd" resultType="pd">
+        SELECT count(t.child_age) datacount,t.child_age FROM nmw_yh_info t LEFT JOIN nmw_order a ON t.order_id = a.id
+        LEFT JOIN nb_site b ON a.site_id = b.SITE_ID
+        <!--WHERE b.bus_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>-->
+        GROUP BY t.child_age
+    </select>
+
+
+
+
+    <!-- 婚姻情况分析-->
+    <select id="queryCustMarriage" parameterType="pd" resultType="pd">
+        SELECT count(t.is_marriage) datacount,CASE t.is_marriage WHEN 0 THEN '未婚' WHEN 1 THEN '已婚' END is_marriage FROM nmw_yh_info t LEFT JOIN nmw_order a ON t.order_id = a.id
+        LEFT JOIN nb_site b ON a.site_id = b.SITE_ID
+        WHERE 1=1
+        <!--WHERE b.bus_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>-->
+        AND t.is_marriage IS NOT NULL
+        GROUP BY t.is_marriage
+    </select>
+
+    <!-- 户型数据 同一类型数据大的采用柱状图-->
+    <select id="queryCustHourseType" parameterType="pd" resultType="pd">
+       select count(*) as datacount, case
+        when o.hourse_type like '一%' then '一室'
+        when o.hourse_type like '1%' then '一室'
+        when o.hourse_type like '2%' then '二室'
+        when o.hourse_type like '二%' then '二室'
+        when o.hourse_type like '两%' then '二室'
+        when o.hourse_type like '3%' then '三室'
+        when o.hourse_type like '三%' then '三室'
+        when o.hourse_type like '4%' then '四室'
+        when o.hourse_type like '四%' then '四室'
+        when o.hourse_type like '5%' then '五室'
+        when o.hourse_type like '五%' then '五室'
+        when o.hourse_type like '别墅%' then '别墅'
+        when o.hourse_type like '复%' then '别墅'
+        else o.hourse_type
+        end hourse_type1 from nmw_yh_info o  GROUP BY hourse_type1 HAVING count(hourse_type1) >1
+    </select>
+
+    <!-- 户型数据 同一类型数据量少的 采用列表战士-->
+    <select id="queryCustHourseTypeLess" parameterType="pd" resultType="pd">
+        SELECT count(t.hourse_type) datacount,t.hourse_type FROM nmw_yh_info t LEFT JOIN nmw_order a ON t.order_id = a.id
+        LEFT JOIN nb_site b ON a.site_id = b.SITE_ID
+        <!-- WHERE b.bus_id IN
+         <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+             #{item,jdbcType=VARCHAR}
+         </foreach>-->
+        GROUP BY t.hourse_type HAVING count(t.hourse_type) &lt; 10
+        ORDER BY datacount DESC
+    </select>
+
+    <!-- 房屋面积数据-->
+    <select id="queryCustHouseArea" parameterType="pd" resultType="pd">
+        SELECT count(t.hourse_area) datacount,t.hourse_area FROM nmw_yh_info t LEFT JOIN nmw_order a ON t.order_id = a.id
+        LEFT JOIN nb_site b ON a.site_id = b.SITE_ID
+        WHERE t.hourse_area is not null
+        <!--WHERE b.bus_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>-->
+        GROUP BY t.hourse_area
+    </select>
+
+    <!-- 房屋面积与预定时间对比[除却 专项 数据]-->
+    <select id="queryAreaAndTime" parameterType="pd" resultType="pd">
+        SELECT t.hourse_area,FORMAT(a.spend_time/60, 0) time,count(1) datacount FROM nmw_yh_info t LEFT JOIN nmw_order a ON t.order_id = a.id
+        LEFT JOIN nb_site b ON a.site_id = b.SITE_ID
+        WHERE a.pclass1 != 3 AND t.hourse_area is not null
+        <!--AND b.bus_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>-->
+        GROUP BY t.hourse_area,time
+        ORDER BY t.hourse_area
+    </select>
+
+    <!-- 是否有孕妇分析-->
+    <select id="queryHasPregnant" parameterType="pd" resultType="pd">
+        SELECT count(*) datacount,CASE t.has_pregnant WHEN 0 THEN '无' WHEN 1 THEN '有' END is_has_pregnant FROM nmw_yh_info t LEFT JOIN nmw_order a ON t.order_id = a.id
+        WHERE 1=1
+        <!--WHERE b.bus_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>-->
+        AND t.has_pregnant IS NOT NULL
+        GROUP BY t.has_pregnant
+    </select>
+
+
+    <!-- 是否有老人分析-->
+    <select id="queryHasOlder" parameterType="pd" resultType="pd">
+        SELECT count(*) datacount,CASE t.has_older WHEN 0 THEN '无' WHEN 1 THEN '有' END is_has_older FROM nmw_yh_info t LEFT JOIN nmw_order a ON t.order_id = a.id
+        WHERE 1=1
+        <!--WHERE b.bus_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>-->
+        AND t.has_older IS NOT NULL
+        GROUP BY t.has_older
+    </select>
+
+    <!-- 用户数据汇总统计分析 add by tankun 20160630 -->
+    <select id="queryUserFamilyDataReport" parameterType="pd" resultType="pd">
+        SELECT '外籍' type,
+        COUNT(t.is_foreigner) datacount
+        FROM nmw_yh_info t LEFT JOIN nmw_order a
+        ON t.order_id = a.id
+        WHERE 1 = 1
+        AND t.is_foreigner = 1
+        <if test="siteSid != null and siteSid.length > 0">
+            AND a.city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !='' and type == 2">
+            AND DATE_FORMAT(t.create_time,'%Y-%m') = #{lastLoginStart}
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !='' and type == 3">
+            AND DATE_FORMAT(t.create_time,'%Y') = #{lastLoginStart}
+        </if>
+        GROUP BY is_foreigner
+        UNION ALL
+        SELECT '老人' type,
+        COUNT(t.has_older) datacount
+        FROM nmw_yh_info t LEFT JOIN nmw_order a
+        ON t.order_id = a.id
+        WHERE 1 = 1
+        AND t.has_older = 1
+        <if test="siteSid != null and siteSid.length > 0">
+            AND a.city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !='' and type == 2">
+            AND DATE_FORMAT(t.create_time,'%Y-%m') = #{lastLoginStart}
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !='' and type == 3">
+            AND DATE_FORMAT(t.create_time,'%Y') = #{lastLoginStart}
+        </if>
+        GROUP BY has_older
+        UNION ALL
+        SELECT '孕妇' type,
+        COUNT(t.has_pregnant) datacount
+        FROM nmw_yh_info t LEFT JOIN nmw_order a
+        ON t.order_id = a.id
+        WHERE 1 = 1
+        AND t.has_pregnant = 1
+        <if test="siteSid != null and siteSid.length > 0">
+            AND a.city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !='' and type == 2">
+            AND DATE_FORMAT(t.create_time,'%Y-%m') = #{lastLoginStart}
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !='' and type == 3">
+            AND DATE_FORMAT(t.create_time,'%Y') = #{lastLoginStart}
+        </if>
+        GROUP BY has_pregnant
+        UNION ALL
+        SELECT '小孩' type,
+        COUNT(t.child_age) datacount
+        FROM nmw_yh_info t LEFT JOIN nmw_order a
+        ON t.order_id = a.id
+        WHERE 1 = 1
+        AND t.child_age !='无'
+        <if test="siteSid != null and siteSid.length > 0">
+            AND a.city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !='' and type == 2">
+            AND DATE_FORMAT(t.create_time,'%Y-%m') = #{lastLoginStart}
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !='' and type == 3">
+            AND DATE_FORMAT(t.create_time,'%Y') = #{lastLoginStart}
+        </if>
+        UNION ALL
+        SELECT '宠物' type,
+        COUNT(t.pet) datacount
+        FROM nmw_yh_info t LEFT JOIN nmw_order a
+        ON t.order_id = a.id
+        WHERE 1 = 1
+        AND t.pet !='无'
+        <if test="siteSid != null and siteSid.length > 0">
+            AND a.city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !='' and type == 2">
+            AND DATE_FORMAT(t.create_time,'%Y-%m') = #{lastLoginStart}
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !='' and type == 3">
+            AND DATE_FORMAT(t.create_time,'%Y') = #{lastLoginStart}
+        </if>
+    </select>
+
+    <!-- 数据汇总(户型查看) add by tankun 20160630 -->
+    <select id="queryUserHomeData" parameterType="pd" resultType="pd">
+        select count(*) as datacount, case
+            when o.hourse_type like '一%' then '1室'
+            when o.hourse_type like '1%' then '1室'
+            when o.hourse_type like '2%' then '2室'
+            when o.hourse_type like '二%' then '2室'
+            when o.hourse_type like '两%' then '2室'
+            when o.hourse_type like '3%' then '3室'
+            when o.hourse_type like '三%' then '3室'
+            when o.hourse_type like '4%' then '4室'
+            when o.hourse_type like '四%' then '4室'
+            when o.hourse_type like '5%' then '5室'
+            when o.hourse_type like '五%' then '5室'
+            when o.hourse_type like '别墅%' then '别墅'
+            when o.hourse_type like '复%' then '别墅'
+            else o.hourse_type
+            end type from nmw_yh_info o
+            LEFT JOIN nmw_order t ON o.order_id = t.id
+            WHERE 1=1
+            <if test="siteSid != null and siteSid.length > 0">
+                AND t.city_name IN
+                <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                    #{item,jdbcType=VARCHAR}
+                </foreach>
+            </if>
+            <if test="lastLoginStart !=null and lastLoginStart !='' and type == 2">
+                AND DATE_FORMAT(o.create_time,'%Y-%m') = #{lastLoginStart}
+            </if>
+            <if test="lastLoginStart !=null and lastLoginStart !='' and type == 3">
+                AND DATE_FORMAT(o.create_time,'%Y') = #{lastLoginStart}
+            </if>
+            GROUP BY type HAVING count(type) >1
+    </select>
+
+</mapper>

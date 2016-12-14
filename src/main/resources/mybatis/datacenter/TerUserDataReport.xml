@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="TerUserDataMapper">
+
+  <!-- 微信数据分析 -->
+	<select id="queryTerUserDataByWX" parameterType="page" resultType="pd">
+        SELECT
+            CONCAT(
+                'Y',
+                SUBSTR(t.re_month, 3, 2),
+                'M',
+                SUBSTR(t.re_month, 5, 2)
+            ) re_month,
+            t.wx_add_count,
+            t.wx_sub_count,
+            (
+                t.wx_add_count - t.wx_sub_count
+            ) lastcount
+        FROM
+            nmw_ter_report t order by re_month desc
+	</select>
+
+    <!-- app下载统计 -->
+    <select id="queryAppCount" parameterType="pd" resultType="pd">
+        SELECT
+            CONCAT(
+                'Y',
+                SUBSTR(t.re_month, 3, 2),
+                'M',
+                SUBSTR(t.re_month, 5, 2)
+            ) re_month,
+            t.ios_count,
+            t.andr_count,
+            (t.ios_count + t.andr_count) appcount
+        FROM
+            nmw_ter_report t order by re_month desc
+    </select>
+
+</mapper>

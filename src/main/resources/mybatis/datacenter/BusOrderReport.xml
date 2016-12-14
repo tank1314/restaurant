@@ -1,0 +1,532 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BusOrderReportMapper">
+
+    <!-- 商户当日数据分析 预约|服务完成|取消订单  视图表中is_cancel 的0：服务完成 1：取消订单-->
+    <select id="queryBusTime" parameterType="pd" resultType="pd">
+        SELECT t.city_id,t.city_name city,SUBSTR(t.start_time, 1, 2) time,t.start_day dayinfo, COUNT(1) datacount
+        FROM nmw_order t
+        WHERE 1=1
+        <if test="siteSid != null and siteSid.length > 0">
+            AND t.city_id IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="status !=null and status !='' and status == 8">
+            and t.order_status =8 and t.pay_status=1
+            and t.start_day &gt; '2016-02-29'
+        </if>
+        <if test="status !=null and status !='' and status == 7">
+            and t.order_status =7
+        </if>
+        <if test="status !=null and status !='' and status == 1">
+            and t.create_time &gt; '2016-02-29 23:59:59'
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND t.start_day = #{lastLoginStart}
+        </if>
+        GROUP BY time,city_id
+        UNION ALL
+        SELECT t.city_id,t.city_name city, SUBSTR(t.work_times, 1, 2) time,t.start_day dayinfo, COUNT(1) datacount FROM v_old_order_info t
+        WHERE 1=1
+        <if test="siteSid != null and siteSid.length > 0">
+            AND t.city_id IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="status !=null and status !='' and status == 8">
+            and t.is_cancel=1
+            and t.start_day &lt;= '2016-02-29'
+        </if>
+        <if test="status !=null and status !='' and status == 7">
+            and t.is_cancel =0
+        </if>
+        <if test="status !=null and status !='' and status == 1">
+            and t.create_time &lt;= '2016-02-29 23:59:59'
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND t.start_day = #{lastLoginStart}
+        </if>
+        GROUP BY time,city_id
+    </select>
+
+    <!-- 商户当月数据分析 -->
+    <select id="queryBusMonth" parameterType="pd" resultType="pd">
+        SELECT t.city_id,t.city_name city,DATE_FORMAT(t.start_day,'%d') time ,COUNT(1) datacount FROM nmw_order t
+        WHERE 1=1
+        <if test="siteSid != null and siteSid.length > 0">
+            AND t.city_id IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="status !=null and status !='' and status == 8">
+            and t.order_status =8 and t.pay_status=1
+            and t.start_day &gt; '2016-02-29'
+        </if>
+        <if test="status !=null and status !='' and status == 7">
+            and t.order_status =7
+        </if>
+        <if test="status !=null and status !='' and status == 1">
+            and t.create_time &gt; '2016-02-29 23:59:59'
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(t.start_day,'%Y-%m') = #{lastLoginStart}
+        </if>
+        GROUP BY time,city_id
+        UNION ALL
+        SELECT t.city_id,t.city_name city, DATE_FORMAT(t.start_day,'%d') time, COUNT(1) datacount FROM v_old_order_info t
+        WHERE 1=1
+        <if test="siteSid != null and siteSid.length > 0">
+            AND t.city_id IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="status !=null and status !='' and status == 8">
+            and t.is_cancel=1
+            and t.start_day &lt;= '2016-02-29'
+        </if>
+        <if test="status !=null and status !='' and status == 7">
+            and t.is_cancel =0
+        </if>
+        <if test="status !=null and status !='' and status == 1">
+            and t.create_time &lt;= '2016-02-29 23:59:59'
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(t.start_day,'%Y-%m') = #{lastLoginStart}
+        </if>
+        GROUP BY time,city_id
+    </select>
+
+    <!-- 商户当年数据分析 -->
+    <select id="queryBusYear" parameterType="pd" resultType="pd">
+        SELECT t.city_id,t.city_name city,DATE_FORMAT(t.start_day,'%m') time ,COUNT(1) datacount
+        FROM nmw_order t
+        WHERE 1=1
+        <if test="siteSid != null and siteSid.length > 0">
+            AND t.city_id IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="status !=null and status !='' and status == 8">
+            and t.order_status =8 and t.pay_status=1
+            and t.start_day &gt; '2016-02-29'
+        </if>
+        <if test="status !=null and status !='' and status == 7">
+            and t.order_status =7
+        </if>
+        <if test="status !=null and status !='' and status == 1">
+            and t.create_time &gt; '2016-02-29 23:59:59'
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(t.start_day,'%Y') = #{lastLoginStart}
+        </if>
+        GROUP BY time,city_id
+        UNION ALL
+        SELECT t.city_id,t.city_name city, DATE_FORMAT(t.start_day,'%m') time, COUNT(1) datacount FROM v_old_order_info t
+        WHERE 1=1
+        <if test="siteSid != null and siteSid.length > 0">
+            AND t.city_id IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="status !=null and status !='' and status == 8">
+            and t.is_cancel=1
+            and t.start_day &lt;= '2016-02-29'
+        </if>
+        <if test="status !=null and status !='' and status == 7">
+            and t.is_cancel =0
+        </if>
+        <if test="status !=null and status !='' and status == 1">
+            and t.create_time &lt;= '2016-02-29 23:59:59'
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(t.start_day,'%Y') = #{lastLoginStart}
+        </if>
+        GROUP BY time,city_id
+    </select>
+
+
+    <!-- 数据量汇总分析-->
+    <select id="queryBusTimeData" parameterType="pd" resultType="pd">
+        SELECT SUM(datacount) cityorderdata,city_id FROM (
+        SELECT t.city_id,t.city_name city,SUBSTR(t.start_time, 1, 2) time,t.start_day dayinfo, COUNT(1) datacount
+        FROM nmw_order t
+        WHERE 1=1
+        <if test="siteSid != null and siteSid.length > 0">
+            AND t.city_id IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="status !=null and status !='' and status == 8">
+            and t.order_status =8 and t.pay_status=1
+            and t.start_day &gt; '2016-02-29'
+        </if>
+        <if test="status !=null and status !='' and status == 7">
+            and t.order_status =7
+        </if>
+        <if test="status !=null and status !='' and status == 1">
+            and t.create_time &gt; '2016-02-29 23:59:59'
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND t.start_day = #{lastLoginStart}
+        </if>
+        GROUP BY time,city_id
+        UNION ALL
+        SELECT t.city_id,t.city_name city, SUBSTR(t.work_times, 1, 2) time,t.start_day dayinfo, COUNT(1) datacount FROM v_old_order_info t
+        WHERE 1=1
+        <if test="siteSid != null and siteSid.length > 0">
+            AND t.city_id IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="status !=null and status !='' and status == 8">
+            and t.is_cancel=1
+            and t.start_day &lt;= '2016-02-29'
+        </if>
+        <if test="status !=null and status !='' and status == 7">
+            and t.is_cancel =0
+        </if>
+        <if test="status !=null and status !='' and status == 1">
+            and t.create_time &lt;= '2016-02-29 23:59:59'
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND t.start_day = #{lastLoginStart}
+        </if>
+        GROUP BY SUBSTR(t.work_times, 1, 2),city_id) a group BY city_id
+    </select>
+
+    <!-- 商户当月数据量分析 -->
+    <select id="queryBusMonthData" parameterType="pd" resultType="pd">
+        SELECT SUM(datacount) cityorderdata,city_id FROM (
+        SELECT t.city_id,t.city_name city,DATE_FORMAT(t.start_day,'%d') time ,COUNT(1) datacount FROM nmw_order t
+        WHERE 1=1
+        <if test="siteSid != null and siteSid.length > 0">
+            AND t.city_id IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="status !=null and status !='' and status == 8">
+            and t.order_status =8 and t.pay_status=1
+            and t.start_day &gt; '2016-02-29'
+        </if>
+        <if test="status !=null and status !='' and status == 7">
+            and t.order_status =7
+        </if>
+        <if test="status !=null and status !='' and status == 1">
+            and t.create_time &gt; '2016-02-29 23:59:59'
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(t.start_day,'%Y-%m') = #{lastLoginStart}
+        </if>
+        GROUP BY time,city_id
+        UNION ALL
+        SELECT t.city_id,t.city_name city, DATE_FORMAT(t.start_day,'%d') time, COUNT(1) datacount FROM v_old_order_info t
+        WHERE 1=1
+        <if test="siteSid != null and siteSid.length > 0">
+            AND t.city_id IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="status !=null and status !='' and status == 8">
+            and t.is_cancel=1
+            and t.start_day &lt;= '2016-02-29'
+        </if>
+        <if test="status !=null and status !='' and status == 7">
+            and t.is_cancel =0
+        </if>
+        <if test="status !=null and status !='' and status == 0">
+            and t.create_time &lt;= '2016-02-29 23:59:59'
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(t.start_day,'%Y-%m') = #{lastLoginStart}
+        </if>
+        GROUP BY time,city_id) a GROUP BY city_id
+    </select>
+
+    <!-- 商户当年数据分析 -->
+    <select id="queryBusYearData" parameterType="pd" resultType="pd">
+        SELECT SUM(datacount) cityorderdata,city_id FROM (
+        SELECT t.city_id,t.city_name city,DATE_FORMAT(t.start_day,'%m') time ,COUNT(1) datacount
+        FROM nmw_order t
+        WHERE 1=1
+        <if test="siteSid != null and siteSid.length > 0">
+            AND t.city_id IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="status !=null and status !='' and status == 8">
+            and t.order_status =8 and t.pay_status=1
+            and t.start_day &gt; '2016-02-29'
+        </if>
+        <if test="status !=null and status !='' and status == 7">
+            and t.order_status =7
+        </if>
+        <if test="status !=null and status !='' and status == 1">
+            and t.create_time &gt; '2016-02-29 23:59:59'
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(t.start_day,'%Y') = #{lastLoginStart}
+        </if>
+        GROUP BY time,city_id
+        UNION ALL
+        SELECT t.city_id,t.city_name city, DATE_FORMAT(t.start_day,'%m') time, COUNT(1) datacount FROM v_old_order_info t
+        WHERE 1=1
+        <if test="siteSid != null and siteSid.length > 0">
+            AND t.city_id IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="status !=null and status !='' and status == 8">
+            and t.is_cancel=1
+            and t.start_day &lt;= '2016-02-29'
+        </if>
+        <if test="status !=null and status !='' and status == 7">
+            and t.is_cancel =0
+        </if>
+        <if test="status !=null and status !='' and status == 1">
+            and t.create_time &lt;= '2016-02-29 23:59:59'
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(t.start_day,'%Y') = #{lastLoginStart}
+        </if>
+        GROUP BY time,city_id) a GROUP  BY city_id
+    </select>
+
+
+    <!-- 年订单列表数据汇总-->
+    <select id="queryYearOrderDataReport" parameterType="pd" resultType="pd">
+        SELECT DATE_FORMAT(t.start_day,'%m') time ,COUNT(1) datacount
+        FROM nmw_order t
+        WHERE 1=1
+        <if test="status !=null and status !='' and status == 8">
+            and t.order_status =8 and t.pay_status=1
+            and t.start_day &gt; '2016-02-29'
+        </if>
+        <if test="status !=null and status !='' and status == 7">
+            and t.order_status =7
+        </if>
+        <if test="status !=null and status !='' and status == 1">
+            and t.create_time &gt; '2016-02-29 23:59:59'
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(t.start_day,'%Y') = #{lastLoginStart}
+        </if>
+        GROUP BY time
+        UNION ALL
+        SELECT DATE_FORMAT(t.start_day,'%m') time, COUNT(1) datacount FROM v_old_order_info t
+        WHERE 1=1
+        <if test="status !=null and status !='' and status == 8">
+            and t.is_cancel=1
+            and t.start_day &lt;= '2016-02-29'
+        </if>
+        <if test="status !=null and status !='' and status == 7">
+            and t.is_cancel =0
+        </if>
+        <if test="status !=null and status !='' and status == 1">
+            and t.create_time &lt;= '2016-02-29 23:59:59'
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(t.start_day,'%Y') = #{lastLoginStart}
+        </if>
+        GROUP BY time
+    </select>
+
+    <!-- 销售额分析 -->
+    <select id="querySaleMoneyData" parameterType="pd" resultType="pd">
+        SELECT FORMAT((SUM(premium_money) / 100)+(SUM(tools_money)/100), 2) money FROM nmw_order t
+        WHERE 1=1
+        <if test="siteSid != null and siteSid.length > 0">
+            AND t.city_id IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !='' and type == 2">
+            AND DATE_FORMAT(t.start_day,'%Y-%m') = #{lastLoginStart}
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !='' and type == 3">
+            AND DATE_FORMAT(t.start_day,'%Y') = #{lastLoginStart}
+        </if>
+        and t.order_status =7
+        UNION ALL
+        SELECT
+        FORMAT(((SUM(premium_money) + SUM(tools_money)) / 100), 2) money
+        FROM v_old_order_info t WHERE
+        1 = 1
+        AND t.is_cancel = 0
+        <if test="siteSid != null and siteSid.length > 0">
+            AND t.city_id IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !='' and type == 2">
+            AND DATE_FORMAT(t.start_day,'%Y-%m') = #{lastLoginStart}
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !='' and type == 3">
+            AND DATE_FORMAT(t.start_day,'%Y') = #{lastLoginStart}
+        </if>
+    </select>
+
+
+    <!-- 订单明细 add by tankun 20160627-->
+    <select id="queryOrderDataDetail" parameterType="pd" resultType="pd">
+        SELECT DATE_FORMAT(t.start_day,'%Y-%m') time ,COUNT(1) datacount,FORMAT(((SUM(premium_money)+SUM(tools_money))/100), 2) money,TRUNCATE(((SUM(premium_money) + SUM(tools_money)) / 100), 2) showmoney
+        FROM nmw_order t
+        WHERE 1=1
+        <if test="siteSid != null and siteSid.length > 0">
+            AND t.city_id IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <!-- 预约订单-->
+        <if test="status !=null and status !='' and status == 1">
+            and t.create_time &gt; '2016-02-29 23:59:59'
+            <if test="dateType !=null and dateType !='' and dateType == 3 ">
+                AND DATE_FORMAT(t.start_day,'%Y') = #{lastLoginStart}
+            </if>
+            <if test="dateType !=null and dateType !='' and dateType == 2 ">
+                AND DATE_FORMAT(t.start_day,'%Y-%m') = #{lastLoginStart}
+            </if>
+        </if>
+        <!-- 服务完成订单-->
+        <if test="status !=null and status !='' and status == 7">
+            and t.order_status =7
+            <!-- 判断是按照 年分析还是 月分析-->
+            <if test="dateType !=null and dateType !='' and dateType == 3 ">
+                AND DATE_FORMAT(t.start_day,'%Y') = #{lastLoginStart}
+            </if>
+            <if test="dateType !=null and dateType !='' and dateType == 2 ">
+                AND DATE_FORMAT(t.start_day,'%Y-%m') = #{lastLoginStart}
+            </if>
+        </if>
+        GROUP BY time
+        UNION ALL
+        SELECT DATE_FORMAT(t.start_day,'%Y-%m') time, COUNT(1) datacount,FORMAT(((SUM(premium_money)+SUM(tools_money))/100), 2) money ,TRUNCATE(((SUM(premium_money) + SUM(tools_money)) / 100), 2) showmoney FROM v_old_order_info t
+        WHERE 1=1
+        <if test="siteSid != null and siteSid.length > 0">
+            AND t.city_id IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <!-- 预约订单-->
+        <if test="status !=null and status !='' and status == 1">
+            and t.create_time &lt;= '2016-02-29 23:59:59'
+            <if test="dateType !=null and dateType !='' and dateType == 3 ">
+                AND DATE_FORMAT(t.start_day,'%Y') = #{lastLoginStart}
+            </if>
+            <if test="dateType !=null and dateType !='' and dateType == 2 ">
+                AND DATE_FORMAT(t.start_day,'%Y-%m') = #{lastLoginStart}
+            </if>
+        </if>
+        <!-- 服务完成订单-->
+        <if test="status !=null and status !='' and status == 7">
+            AND t.is_cancel = 0
+            <!-- 判断是按照 年分析还是 月分析-->
+            <if test="dateType !=null and dateType !='' and dateType == 3 ">
+                AND DATE_FORMAT(t.start_day,'%Y') = #{lastLoginStart}
+            </if>
+            <if test="dateType !=null and dateType !='' and dateType == 2 ">
+                AND DATE_FORMAT(t.start_day,'%Y-%m') = #{lastLoginStart}
+            </if>
+        </if>
+        GROUP BY time
+    </select>
+
+
+    <!-- 注册数|下单数|付款数|充值完成数|服务完成-->
+    <select id="queryUserOrderDataReport" parameterType="pd" resultType="pd">
+        SELECT count(id) datacount,'注册' type from yh_user
+        WHERE  1=1
+        <if test="dateType !=null and dateType !='' and dateType == 3 ">
+            AND FROM_UNIXTIME(create_time,'%Y') = #{lastLoginStart}
+        </if>
+        <if test="dateType !=null and dateType !='' and dateType == 2 ">
+            AND FROM_UNIXTIME(create_time,'%Y-%m') = #{lastLoginStart}
+        </if>
+        UNION ALL
+        select count(*) datacount,'下单' type from nmw_order n left join  yh_user y on n.uid=y.id
+        where 1=1
+        <if test="dateType !=null and dateType !='' and dateType == 3 ">
+            AND FROM_UNIXTIME(y.create_time,'%Y') = #{lastLoginStart}
+        </if>
+        <if test="dateType !=null and dateType !='' and dateType == 2 ">
+            AND FROM_UNIXTIME(y.create_time,'%Y-%m') = #{lastLoginStart}
+        </if>
+        <if test="siteSid != null and siteSid.length > 0">
+            AND n.city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        UNION ALL
+        select count(*) datacount,'付款' type from nmw_order n left join  yh_user y on n.uid=y.id
+        where 1=1
+        and pay_status = 1
+        <if test="dateType !=null and dateType !='' and dateType == 3 ">
+            AND FROM_UNIXTIME(y.create_time,'%Y') = #{lastLoginStart}
+        </if>
+        <if test="dateType !=null and dateType !='' and dateType == 2 ">
+            AND FROM_UNIXTIME(y.create_time,'%Y-%m') = #{lastLoginStart}
+        </if>
+        <if test="siteSid != null and siteSid.length > 0">
+            AND n.city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        UNION ALL
+        select count(*) datacount,'服务完成' type from nmw_order n left join  yh_user y on n.uid=y.id
+        where 1=1 and n.order_status=7
+        <if test="dateType !=null and dateType !='' and dateType == 3 ">
+            AND FROM_UNIXTIME(y.create_time,'%Y') = #{lastLoginStart}
+        </if>
+        <if test="dateType !=null and dateType !='' and dateType == 2 ">
+            AND FROM_UNIXTIME(y.create_time,'%Y-%m') = #{lastLoginStart}
+        </if>
+        <if test="siteSid != null and siteSid.length > 0">
+            AND n.city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        UNION ALL
+        select count(DISTINCT(uid)) datacount, '充值' type from nmw_user_recharge  n left join  yh_user y
+        on n.uid=y.id
+        where 1=1
+        <if test="dateType !=null and dateType !='' and dateType == 3 ">
+            AND FROM_UNIXTIME(y.create_time,'%Y') = #{lastLoginStart}
+        </if>
+        <if test="dateType !=null and dateType !='' and dateType == 2 ">
+            AND FROM_UNIXTIME(y.create_time,'%Y-%m') = #{lastLoginStart}
+        </if>
+        and n.status=2 and (n.pay_platform='alipay' or n.pay_platform='wx')
+        <if test="siteSid != null and siteSid.length > 0">
+            AND n.recharge_city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+    </select>
+
+    <!-- 累计预约订单数  add by tankun 2016063 -->
+    <select id="queryOrderAppointReportData" parameterType="pd" resultType="pd">
+        SELECT (count(id) + 130000) as datacount FROM nmw_order where  is_cancel = 0
+    </select>
+
+
+</mapper>

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CustSatisfiedMapper">
+
+    <!-- 周顾客满意度数据报告 -->
+    <!-- 1、根据当前默认日期查询该日期对应的周数据 -->
+	<select id="queryDataWeek" parameterType="pd" resultType="pd">
+        SELECT subdate( #{lastLoginStart}, date_format(#{lastLoginStart}, '%w')) sevenday,'周日' AS 'week' UNION ALL SELECT subdate( #{lastLoginStart}, date_format(#{lastLoginStart}, '%w') - 1 ) sevenday,'周一' AS 'week' UNION ALL SELECT subdate( #{lastLoginStart}, date_format(#{lastLoginStart}, '%w') - 2 ) sevenday,'周二' AS 'week' UNION ALL SELECT subdate( #{lastLoginStart}, date_format(#{lastLoginStart}, '%w') - 3 ) sevenday,'周三' AS 'week' UNION ALL SELECT subdate( #{lastLoginStart}, date_format(#{lastLoginStart}, '%w') - 4 ) sevenday,'周四' AS 'week' UNION ALL SELECT subdate( #{lastLoginStart}, date_format(#{lastLoginStart}, '%w') - 5 ) sevenday,'周五' AS 'week' UNION ALL SELECT subdate( #{lastLoginStart}, date_format(#{lastLoginStart}, '%w') - 6 ) sevenday,'周六' AS 'week'
+	</select>
+
+    <!-- 2、根据当前服务时间查询订单数总计、满意订单数总计、一般订单数总计 不满意订单数总计 ——>查询条件为服务完成&各种服务状态 -->
+    <select id="queryAllSiteOrderInfo" parameterType="pd" resultType="pd">
+        SELECT COUNT(1) datacount FROM nmw_order t  WHERE  1=1 AND t.order_status = 7
+        AND t.start_day &gt;= subdate(#{lastLoginStart}, date_format(#{lastLoginStart}, '%w')) AND t.start_day &lt;= subdate( #{lastLoginStart}, date_format(#{lastLoginStart}, '%w') - 6)
+        AND t.site_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+        UNION ALL
+        SELECT COUNT(1) datacount from nmw_order_evaluate a LEFT JOIN nmw_order t  ON t.id = a.order_id AND  a.service_rating = 5 AND t.order_status = 7
+        WHERE t.start_day &gt;= subdate(#{lastLoginStart}, date_format(#{lastLoginStart}, '%w')) AND t.start_day &lt;= subdate( #{lastLoginStart}, date_format(#{lastLoginStart}, '%w') - 6)
+        AND t.site_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+        UNION ALL
+        SELECT COUNT(1) datacount from nmw_order_evaluate a LEFT JOIN nmw_order t  ON t.id = a.order_id AND  a.service_rating = 3 AND t.order_status = 7
+        WHERE t.start_day &gt;= subdate(#{lastLoginStart}, date_format(#{lastLoginStart}, '%w')) AND t.start_day &lt;= subdate( #{lastLoginStart}, date_format(#{lastLoginStart}, '%w') - 6)
+        AND t.site_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+        UNION ALL
+        SELECT COUNT(1) datacount from nmw_order_evaluate a LEFT JOIN nmw_order t  ON t.id = a.order_id AND  a.service_rating = 1 AND t.order_status = 7
+        WHERE t.start_day &gt;= subdate(#{lastLoginStart}, date_format(#{lastLoginStart}, '%w')) AND t.start_day &lt;= subdate( #{lastLoginStart}, date_format(#{lastLoginStart}, '%w') - 6)
+        AND t.site_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+    <!-- 3、根据当前日期查询当天的各项订单数-->
+    <select id="currentOrderData" parameterType="pd" resultType="pd">
+        SELECT count(1) datacount FROM nmw_order_evaluate a LEFT JOIN nmw_order t  ON t.id = a.order_id  AND t.order_status = 7
+        <if test="service_rating == 5">
+            AND a.service_rating = 5
+        </if>
+        <if test="service_rating == 3">
+            AND a.service_rating = 3
+        </if>
+        <if test="service_rating == 1">
+            AND a.service_rating = 1
+        </if>
+        WHERE t.start_day = #{lastLoginStart}
+        AND t.site_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+    <!-- 查询当日订单总数-->
+    <select id="currentOrderDataAll" parameterType="pd" resultType="pd">
+        SELECT COUNT(1) datacount FROM nmw_order t WHERE t.order_status = 7 AND t.start_day = #{lastLoginStart}
+        AND t.site_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+
+
+    <!-- 普通订单取消数周统计-->
+    <select id="commOrderWeekData" parameterType="pd" resultType="pd">
+        SELECT count(1) datacount FROM nmw_order t WHERE t.pay_status = 0 AND t.is_cancel = 1 AND t.start_day &gt;= subdate(#{lastLoginStart}, date_format(#{lastLoginStart}, '%w')) AND t.start_day &lt;= subdate( #{lastLoginStart}, date_format(#{lastLoginStart}, '%w') - 6)
+        AND t.site_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+        UNION ALL
+        SELECT count(1) datacount FROM nmw_order t WHERE t.pay_status = 1 AND t.is_cancel = 1 AND t.start_day &gt;= subdate(#{lastLoginStart}, date_format(#{lastLoginStart}, '%w')) AND t.start_day &lt;= subdate( #{lastLoginStart}, date_format(#{lastLoginStart}, '%w') - 6)
+        AND t.site_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+    <!-- 普通订单取消数根据日期查询详情 -->
+    <select id="commOrderCancleDataByTime" parameterType="pd" resultType="pd">
+        SELECT count(1) datacount FROM nmw_order t
+        WHERE 1=1
+        <if test="pay_staus == 0 ">
+            AND t.pay_status = 0
+        </if>
+        <if test="pay_staus == 1">
+           AND t.pay_status = 1
+        </if>
+        AND t.is_cancel = 1
+        AND t.start_day LIKE CONCAT(CONCAT('%', #{lastLoginStart}),'%')
+        AND t.site_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+    <!-- 周期订单数-->
+    <select id="circleDataCount" parameterType="pd" resultType="pd">
+        SELECT count(1) datacount FROM nmw_order t WHERE t.is_period_order = 1  AND  t.start_day LIKE CONCAT(CONCAT('%', #{lastLoginStart}),'%')
+        AND t.site_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+</mapper>

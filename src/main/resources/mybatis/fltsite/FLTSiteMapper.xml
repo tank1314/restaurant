@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="FLTSiteMapper">
+	
+	<select id="queryFLTSiteList" parameterType="page" resultType="pd">
+			SELECT * from nb_site WHERE 1=1 AND up_site_sid='4001'
+	</select>
+	<!-- 获得家政的自营站点-->
+	<select id="querySelfJiazhengSiteList" parameterType="page" resultType="pd">
+
+		SELECT *  from nb_site where service_type=1
+		<if test="siteSid != null and siteSid.length > 0">
+			AND site_sid IN
+			<foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+				#{item,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+	</select>
+
+	<!-- 获得家政的外包站点-->
+	<select id="queryOutJiazhengSiteList" parameterType="page" resultType="pd">
+		SELECT *  from nb_site where service_type=1 and catagory = 0
+		<if test="siteSid != null and siteSid.length > 0">
+			AND site_sid IN
+			<foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+				#{item,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+	</select>
+</mapper>

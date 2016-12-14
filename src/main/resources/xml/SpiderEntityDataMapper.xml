@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.fh.service.spider.SpiderService">
+	<!-- 小区信息录入-->
+	<insert id="saveCityCommunityInfo" parameterType="CityCommunity">
+		INSERT INTO nmw_city_community(comm_name,town_id,town_name,comm_address,longi,lat,built_date,ajk_id)
+		values(#{comm_name},#{town_id},#{town_name},#{comm_address},#{longi},#{lat},#{built_date},#{ajk_id})
+	</insert>
+
+
+	<insert id="saveTownShipInfo" parameterType="CityCommunity" >
+		insert into nmw_city_township (
+		town_name
+		) values (
+		#{comm_name}
+		)
+	</insert>
+
+	<!-- 小区数据查询 -->
+	<!--<select id="querynmwCityCommunity" resultType="CityCommunity">
+		SELECT ajk_id FROM nmw_city_community LIMIT 4000 , 100
+	</select>-->
+
+	<!-- comm_address =#{comm_address}, -->
+	<update id="editnmwCityCommunity" parameterType="CityCommunity">
+		UPDATE nmw_city_community
+		SET
+		develop_bus=#{develop_bus},
+		property_comany = #{property_comany},
+		property_type=#{property_type},
+		property_free = #{property_free},
+		total_built_area = #{total_built_area},
+		total_house = #{total_house},
+		volume = #{volume},
+		rental_rate = #{rental_rate},
+		parking_space = #{parking_space},
+		green_rate = #{green_rate},
+		comm_desc = #{comm_desc}
+		WHERE ajk_id = #{ajk_id}
+	</update>
+
+
+	<!-- 小区数据查询 -->
+	<select id="querynmwCityCommunity" resultType="CityCommunity">
+		SELECT ajk_id FROM nmw_city_community LIMIT ${currentPage} , ${pageSize}
+	</select>
+
+    <select id="queryCommuntiyPage" resultType="CityCommunity" parameterType="java.util.Map">
+          SELECT ajk_id FROM nmw_city_community LIMIT  #{pstart}, #{psize}
+    </select>
+	
+
+	
+	<!-- fh313596790qq(青苔) -->
+</mapper>

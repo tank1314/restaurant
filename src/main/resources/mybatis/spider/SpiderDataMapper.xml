@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="SpiderMapper">
+	<!-- 新增区域信息 -->
+	<insert id="saveTownShip" parameterType="pd" >
+		insert into nmw_city_township (
+		town_name,district_id,district_name
+		) values (
+			#{town_name},#{district_id},#{district_name}
+		)
+	</insert>
+
+	<!-- 新增小区特色信息 -->
+	<insert id="saveCharacter" parameterType="pd" >
+		insert into nmw_city_character (
+		name
+		) values (
+		#{name}
+		)
+	</insert>
+
+	<!-- 小区信息录入-->
+	<insert id="saveCityCommunity" parameterType="pd">
+		INSERT INTO nmw_city_community(comm_name,town_id,town_name,distract_id,distract_name,comm_address,longi,lat,built_date,ajk_id)
+		values(#{comm_name},#{town_id},#{town_name},#{distract_id},#{distract_name},#{comm_address},#{longi},#{lat},#{built_date},#{ajk_id})
+	</insert>
+	
+
+	
+	<!-- fh313596790qq(青苔) -->
+</mapper>

@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="RechangeMoneyReportMapper">
+    <!-- 充值记录数据分析 -->
+    <select id="queryRechangeMoneyMonth" parameterType="pd" resultType="pd">
+        SELECT recharge_city_name city,DATE_FORMAT(t.pay_time,'%d') times,TRUNCATE(sum(recharge_money)/100,2) datacount
+        from nmw_user_recharge t
+        WHERE t.pay_platform IN ('wx','alipay') AND t. STATUS = 2
+        <if test="siteSid != null and siteSid.length > 0">
+            AND recharge_city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(t.pay_time,'%Y-%m') = #{lastLoginStart}
+        </if>
+        GROUP BY city,times
+    </select>
+
+
+    <!-- 月充值金额汇总查询-->
+    <select id="queryRechangeMoneyMonthData" parameterType="pd" resultType="pd">
+        SELECT city,FORMAT(SUM(datacount),2) czmoney,TRUNCATE(SUM(datacount),2) moneydata FROM (
+        SELECT recharge_city_name city,DATE_FORMAT(t.pay_time,'%d') times,TRUNCATE(sum(recharge_money)/100,2) datacount
+        from nmw_user_recharge t
+        WHERE t.pay_platform IN ('wx','alipay') AND t. STATUS = 2
+        <if test="siteSid != null and siteSid.length > 0">
+            AND recharge_city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(t.pay_time,'%Y-%m') = #{lastLoginStart}
+        </if>
+        GROUP BY city,times) a GROUP BY a.city
+    </select>
+
+
+    <!-- 20160627 by tankun 年充值金额汇总查询-->
+    <select id="queryRechangeMoneyYearDataStr" parameterType="pd" resultType="pd">
+        SELECT FORMAT(SUM(czmoney),2) czmoney FROM (
+        SELECT TRUNCATE(SUM(datacount),2) czmoney FROM (
+        SELECT recharge_city_name city,TRUNCATE(sum(recharge_money)/100,2) datacount
+        from nmw_user_recharge t
+        WHERE t.pay_platform IN ('wx','alipay') AND t. STATUS = 2
+        <if test="siteSid != null and siteSid.length > 0">
+            AND recharge_city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(t.pay_time,'%Y') = #{lastLoginStart}
+        </if>
+        GROUP BY city) a
+        UNION ALL
+        SELECT TRUNCATE(SUM(product_price),2) czmoney from yh_longterm_order t LEFT JOIN yh_longterm_order_expand b
+        ON t.order_id = b.order_id
+        WHERE t.is_cancel = 0
+        <if test="siteSids != null and siteSids.length > 0">
+            AND b.city_id IN
+            <foreach item="item" index="index" collection="siteSids" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(FROM_UNIXTIME(create_time),'%Y') = #{lastLoginStart}
+        </if>
+        AND DATE_FORMAT(FROM_UNIXTIME(create_time),'%Y-%m') &lt;= '2016-02-29'
+        ) m
+    </select>
+
+    <!-- 月充值金额汇总查询 add by tankun 20160627-->
+    <select id="queryRechangeMoneyMonthDataStr" parameterType="pd" resultType="pd">
+        SELECT FORMAT(SUM(czmoney),2) czmoney FROM (
+        SELECT TRUNCATE(SUM(datacount),2) czmoney FROM (
+        SELECT recharge_city_name city,DATE_FORMAT(t.pay_time,'%d') times,TRUNCATE(sum(recharge_money)/100,2) datacount
+        from nmw_user_recharge t
+        WHERE t.pay_platform IN ('wx','alipay') AND t. STATUS = 2
+        <if test="siteSid != null and siteSid.length > 0">
+            AND recharge_city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(t.pay_time,'%Y-%m') = #{lastLoginStart}
+        </if>
+        GROUP BY city,times) a
+        UNION ALL
+        SELECT TRUNCATE(SUM(product_price),2) czmoney from yh_longterm_order t LEFT JOIN yh_longterm_order_expand b
+        ON t.order_id = b.order_id
+        WHERE t.is_cancel = 0
+        <if test="siteSids != null and siteSids.length > 0">
+            AND b.city_id IN
+            <foreach item="item" index="index" collection="siteSids" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(FROM_UNIXTIME(create_time),'%Y-%m') = #{lastLoginStart}
+        </if>
+        AND DATE_FORMAT(FROM_UNIXTIME(create_time),'%Y-%m') &lt;= '2016-02-29'
+        ) m
+    </select>
+
+    <!--充值金额段数据分析-->
+    <select id="queryRechangeMoneyJD" parameterType="pd" resultType="pd">
+        SELECT recharge_city_name city,
+        CASE
+        WHEN t.recharge_money = 100 THEN '1'
+        WHEN t.recharge_money&gt;= 200 AND t.recharge_money&lt;= 9900 THEN '2~99'
+        WHEN t.recharge_money&gt;= 10000 AND t.recharge_money&lt;= 19900 THEN '100~199'
+        WHEN t.recharge_money&gt;= 20000 AND t.recharge_money&lt;= 29900 THEN '200~299'
+        WHEN t.recharge_money&gt;= 30000 AND t.recharge_money&lt;= 39900 THEN '300~399'
+        WHEN t.recharge_money&gt;= 40000 AND t.recharge_money&lt;= 49900 THEN '400~499'
+        WHEN t.recharge_money&gt;= 50000 AND t.recharge_money&lt;= 59900 THEN '500~599'
+        WHEN t.recharge_money&gt;= 60000 AND t.recharge_money&lt;= 69900 THEN '600~699'
+        WHEN t.recharge_money&gt;= 70000 AND t.recharge_money&lt;= 99900 THEN '700~999'
+        WHEN t.recharge_money&gt;= 100000 AND t.recharge_money&lt;= 199900 THEN '1000~1999'
+        WHEN t.recharge_money&gt;= 200000 AND t.recharge_money&lt;= 299900 THEN '2000~2999'
+        WHEN t.recharge_money&gt;= 300000 THEN '>=3999'
+        END czmoney,
+        count(1) datacount from nmw_user_recharge t
+        WHERE t.pay_platform IN ('wx','alipay') AND t. STATUS = 2
+        <if test="siteSid != null and siteSid.length > 0">
+            AND recharge_city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(t.pay_time,'%Y-%m') = #{lastLoginStart}
+        </if>
+        GROUP BY city,czmoney
+    </select>
+
+
+    <!-- 渠道消费总数据分析-->
+    <select id="cityXftotalDataqd" resultType="pd" parameterType="pd">
+        SELECT TRUNCATE((SUM(t.change_recharge_money) + SUM(t.change_give_money)) /100,2) xfje,a.recharge_city_name city
+        from nmw_wallet_io t
+        LEFT JOIN nmw_user_recharge a ON t.recharge_id = a.id WHERE 1=1 and t.recharge_id is not null and a.id is not
+        null
+        AND t.use_type = 2
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(t.use_time, '%Y-%m') = #{lastLoginStart}
+        </if>
+        <if test="siteSid != null and siteSid.length > 0">
+            AND a.recharge_city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        GROUP BY recharge_city_name
+    </select>
+
+    <!--各个渠道消费明细-->
+    <select id="cityxfDetailByqd" resultType="pd" parameterType="pd">
+        SELECT TRUNCATE((SUM(t.change_recharge_money) + SUM(t.change_give_money)) /100,2)
+        xfje,
+        CASE use_channel WHEN 'linqu' THEN '跑腿' WHEN 'miu' THEN '出行' WHEN 'niuhome' THEN '家政' WHEN 'fornet' THEN '洗衣' ELSE '其他' END use_channel,
+        a.recharge_city_name city,DATE_FORMAT(t.use_time, '%Y%m') dayinfo from nmw_wallet_io t
+        LEFT JOIN nmw_user_recharge a ON t.recharge_id = a.id WHERE 1=1 and t.recharge_id is not null and a.id is not null
+        AND t.use_type = 2
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(t.use_time, '%Y-%m') = #{lastLoginStart}
+        </if>
+        <if test="siteSid != null and siteSid.length > 0">
+            AND a.recharge_city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        GROUP BY t.use_channel ,city
+    </select>
+
+
+    <!-- 余额前十 -->
+    <select id="balanceTopT" parameterType="pd" resultType="pd">
+        SELECT t.uid,a.realname, TRUNCATE((t.remain_recharge_money+t.give_money)/100,2)
+        money,FROM_UNIXTIME(a.create_time) dateinfo,t.recharge_city_name city from nmw_user_recharge t
+        LEFT JOIN yh_user a ON t.uid = a.id
+        WHERE 1=1 and t.uid is not null and a.id is not null and t.status = 2
+        <if test="siteSid != null and siteSid.length > 0">
+            AND t.recharge_city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        GROUP BY t.uid ORDER BY money DESC
+        LIMIT 30
+    </select>
+
+
+    <!-- 消费前十-->
+    <select id="consumTopT" parameterType="pd" resultType="pd">
+        SELECT b.id,b.realname,FROM_UNIXTIME(b.create_time) dateinfo, TRUNCATE((t.change_recharge_money +
+        t.change_give_money)/100,2) xfje,a.recharge_city_name city
+        FROM nmw_wallet_io t
+        LEFT JOIN nmw_user_recharge a ON t.recharge_id = a.id
+        LEFT JOIN yh_user b ON a.uid = b.id
+        WHERE 1=1 and t.recharge_id IS NOT NULL and a.id IS NOT NULL AND b.id IS NOT NULL
+        AND t.use_type = 2
+        <if test="siteSid != null and siteSid.length > 0">
+            AND a.recharge_city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        GROUP BY t.uid
+        ORDER BY xfje DESC
+        LIMIT 30
+    </select>
+
+    <!-- 充值剩余金额 -->
+    <select id="rechargeMoney" parameterType="pd" resultType="pd">
+      SELECT FORMAT(sum(`remain_recharge_money`)/100,2) money,recharge_city_name city FROM `nmw_user_recharge` where  status=2
+        <if test="siteSid != null and siteSid.length > 0">
+            AND recharge_city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        GROUP BY recharge_city_name
+    </select>
+
+    <!-- 赠送剩余金额 -->
+    <select id="giveMoney" parameterType="pd" resultType="pd">
+        SELECT FORMAT(sum(`remain_give_money`)/100,2) money,recharge_city_name city FROM `nmw_user_recharge` where  status=2
+        <if test="siteSid != null and siteSid.length > 0">
+            AND recharge_city_name IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        GROUP BY recharge_city_name
+    </select>
+
+    <!-- add by tankun 20160627 充值金额汇总-->
+    <select id="queryCzMoneyData" parameterType="pd" resultType="pd">
+        SELECT DATE_FORMAT(t.pay_time,'%Y-%m') time,FORMAT(sum(recharge_money)/100,2) datacount,TRUNCATE(sum(recharge_money)/100,2) showmoney from nmw_user_recharge t
+        WHERE t.pay_platform IN ('wx','alipay') AND t. STATUS = 2
+        AND recharge_city_name IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+        <if test="lastLoginStart !=null and lastLoginStart !='' and type == 2">
+            AND DATE_FORMAT(t.pay_time,'%Y-%m') = #{lastLoginStart}
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !='' and type == 3">
+            AND DATE_FORMAT(t.pay_time,'%Y') = #{lastLoginStart}
+        </if>
+        GROUP BY time
+        UNION ALL
+        SELECT DATE_FORMAT(FROM_UNIXTIME(create_time),'%Y-%m') time,FORMAT(SUM(product_price),2) datacount,TRUNCATE(SUM(product_price),2) showmoney  from yh_longterm_order t LEFT JOIN yh_longterm_order_expand b
+        ON t.order_id = b.order_id
+        WHERE t.is_cancel = 0
+        AND b.city_id IN
+        <foreach item="item" index="index" collection="siteSids" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+        <if test="lastLoginStart !=null and lastLoginStart !='' and type == 2">
+            AND DATE_FORMAT(FROM_UNIXTIME(create_time),'%Y-%m') = #{lastLoginStart}
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !='' and type == 3">
+            AND DATE_FORMAT(FROM_UNIXTIME(create_time),'%Y') = #{lastLoginStart}
+        </if>
+        AND DATE_FORMAT(FROM_UNIXTIME(create_time),'%Y-%m') &lt;= '2016-02-29'
+        GROUP BY time
+    </select>
+
+</mapper>

@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ProductStatisticsMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		nmw_product_statisticsProductStatistics
+	</sql>
+	
+	<!-- 字段 -->
+	<sql id="Field">
+		productName,	
+		orderNumber,	
+		numberOccupiesCompared,	
+		orderMoney,	
+		MoneyOccupiesCompared,	
+		ProductStatistics_ID
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{productName},	
+		#{orderNumber},	
+		#{numberOccupiesCompared},	
+		#{orderMoney},	
+		#{MoneyOccupiesCompared},	
+		#{ProductStatistics_ID}
+	</sql>
+	
+	<!-- 新增-->
+	<insert id="save" parameterType="pd">
+		insert into 
+	<include refid="tableName"></include>
+		(
+	<include refid="Field"></include>
+		) values (
+	<include refid="FieldValue"></include>
+		)
+	</insert>
+	
+	<!-- 删除-->
+	<delete id="delete" parameterType="pd">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			ProductStatistics_ID = #{ProductStatistics_ID}
+	</delete>
+	
+	<!-- 修改 -->
+	<update id="edit" parameterType="pd">
+		update
+		<include refid="tableName"></include>
+		set 
+			productName = #{productName},
+			orderNumber = #{orderNumber},
+			numberOccupiesCompared = #{numberOccupiesCompared},
+			orderMoney = #{orderMoney},
+			MoneyOccupiesCompared = #{MoneyOccupiesCompared},
+		ProductStatistics_ID = ProductStatistics_ID
+		where 
+		ProductStatistics_ID = #{ProductStatistics_ID}
+	</update>
+	
+	<!-- 通过ID获取数据 -->
+	<select id="findById" parameterType="pd" resultType="pd">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 
+			ProductStatistics_ID = #{ProductStatistics_ID}
+	</select>
+	
+	<!-- 列表 -->
+	<!--04是类别统计,别的是单类的商品统计-->
+	<select id="queryProductStatisticsList" parameterType="pd" resultType="pd">
+		<if test="productType != 04">
+			SELECT
+				op.pname AS productName,
+				count(op.id) AS orderNumber,
+				floor(sum(o.premium_money / o.rate) / 100) AS orderMoney
+			FROM
+				nmw_order o
+			LEFT JOIN order_product op ON op.order_sn = o.order_sn
+			LEFT JOIN nb_site s ON s.SITE_SID=o.site_id
+			WHERE
+				is_cancel = 0
+				AND pay_status = 1
+				AND order_status=7
+			<if test="productType!= null and productType != ''">
+				and o.pclass1=#{productType}
+			</if>
+			<if test="create_day!= null and create_day != ''">
+				AND start_day>=#{create_day}
+			</if>
+			<if test="end_day !=null and end_day!=''">
+				AND #{end_day}>=start_day
+			</if>
+			<if test="site_sid !=null and site_sid !=''">
+				AND s.site_sid = #{site_sid}
+			</if>
+			GROUP BY
+				productName
+			ORDER BY orderMoney DESC,orderNumber DESC
+		</if>
+		<if test="productType!= null and productType != '' and productType == 04">
+			SELECT
+				o.order_type AS productName,
+				count(op.id) AS orderNumber,
+
+				floor(sum(o.premium_money / o.rate) / 100) AS orderMoney
+			FROM
+				nmw_order o
+			LEFT JOIN order_product op ON op.order_sn = o.order_sn
+			LEFT JOIN nb_site s ON s.SITE_SID=o.site_id
+			WHERE
+				is_cancel = 0
+				AND pay_status = 1
+				AND order_status=7
+			<if test="create_day!= null and create_day != ''">
+				AND o.start_day>=#{create_day}
+			</if>
+			<if test="end_day !=null and end_day!=''">
+				AND #{end_day}>=o.start_day
+			</if>
+			<if test="site_sid !=null and site_sid !=''">
+				AND s.site_sid = #{site_sid}
+			</if>
+			GROUP BY
+				o.pclass1
+			ORDER BY orderMoney DESC,orderNumber DESC
+		</if>
+	</select>
+
+
+
+	
+	<!-- 列表(全部) -->
+	<select id="listAll" parameterType="pd" resultType="pd">
+		select
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+	</select>
+	
+	<!-- 批量删除 -->
+	<delete id="deleteAll" parameterType="String">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			ProductStatistics_ID in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+                 #{item}
+		</foreach>
+	</delete>
+	
+	<!-- fh313596790qq(青苔) -->
+</mapper>

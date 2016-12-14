@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="VipUserInfoMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		menu_user_info
+	</sql>
+	
+	<!-- 字段 -->
+	<sql id="Field">
+		id,	
+		user_name,	
+		sex,	
+		group_type,	
+		member_type,	
+		phone,	
+		registe_time,	
+		comm_address,	
+		create_time,	
+		create_by,	
+		modify_by,	
+		modify_time,	
+		idcard,	
+		user_desc
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{id},	
+		#{user_name},	
+		#{sex},	
+		#{group_type},	
+		#{member_type},	
+		#{phone},	
+		#{registe_time},	
+		#{comm_address},	
+		#{create_time},	
+		#{create_by},	
+		#{modify_by},	
+		#{modify_time},	
+		#{idcard},	
+		#{user_desc}
+	</sql>
+	
+	<!-- 新增-->
+	<insert id="save" parameterType="pd">
+		insert into 
+	<include refid="tableName"></include>
+		(
+		user_name,
+		sex,
+		group_type,
+		member_type,
+		phone,
+		registe_time,
+		comm_address,
+		create_time,
+		create_by,
+		user_desc
+		) values (
+		#{user_name},
+		#{sex},
+		#{group_type},
+		#{member_type},
+		#{phone},
+		#{registe_time},
+		#{comm_address},
+		#{create_time},
+		#{create_by},
+		#{user_desc}
+		)
+	</insert>
+	
+	<!-- 删除-->
+	<delete id="delete" parameterType="pd">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			id = #{id}
+	</delete>
+	
+	<!-- 修改 -->
+	<update id="edit" parameterType="pd">
+		update
+		<include refid="tableName"></include>
+		set 
+			id = #{id},
+			user_name = #{user_name},
+			sex = #{sex},
+			group_type = #{group_type},
+			member_type = #{member_type},
+			phone = #{phone},
+			comm_address = #{comm_address},
+			modify_by = #{modify_by},
+			modify_time = #{modify_time},
+			user_desc = #{user_desc}
+		where 
+		id = #{id}
+	</update>
+	
+	<!-- 通过ID获取数据 -->
+	<select id="findById" parameterType="pd" resultType="pd">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 
+			id = #{id}
+	</select>
+	
+	<!-- 列表 -->
+	<select id="datalistPage" parameterType="page" resultType="pd">
+		select
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 1=1
+		<if test="pd.keywords!= null and pd.keywords != ''"><!-- 关键词检索 -->
+			and
+				(
+				user_name LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					 or
+				phone LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+				OR
+				comm_address LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+
+				)
+		</if>
+		<if test="pd.sex!= null and pd.sex != ''">
+			AND sex = #{pd.sex}
+		</if>
+		<if test="pd.group_type!= null and pd.group_type != ''">
+			AND group_type = #{pd.group_type}
+		</if>
+		<if test="pd.member_type!= null and pd.member_type != ''">
+			AND member_type = #{pd.member_type}
+		</if>
+		<if test="pd.lastLoginStart !=null and pd.lastLoginStart !=''">
+			and registe_time &gt;= #{lastLoginStart}
+		</if>
+		<if test="pd.lastLoginEnd!=null and pd.lastLoginEnd!=''">
+			and registe_time &lt;= #{lastLoginEnd}
+		</if>
+	</select>
+	
+	<!-- 列表(全部) -->
+	<select id="listAll" parameterType="pd" resultType="pd">
+		select
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+	</select>
+
+	<select id="findUserByParam" parameterType="pd" resultType="pd">
+		SELECT t.* FROM menu_user_info t
+		WHERE 1=1
+		<if test="userName !=null and userName !=''">
+			AND t.user_name = #{userName}
+		</if>
+		<if test="phone !=null and phone !=''">
+			AND t.phone = #{phone}
+		</if>
+	</select>
+	
+	<!-- 批量删除 -->
+	<delete id="deleteAll" parameterType="String">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			id in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+                 #{item}
+		</foreach>
+	</delete>
+
+</mapper>

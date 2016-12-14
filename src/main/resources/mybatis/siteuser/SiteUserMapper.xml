@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="SiteUserMapper">
+	
+	<select id="querySiteUser" parameterType="page" resultType="pd">
+		SELECT
+			count(a.id) AS userCount,
+			s.site_name
+		FROM
+			yh_admin a
+		LEFT JOIN nb_site s ON s.SITE_SID = a.belongunit
+		WHERE
+			a.status_is = 'Y'
+ 			AND #{pd.start_day} >= cover_date
+			AND s.site_type='03'
+			AND s.SITE_STATUS=1
+		GROUP BY
+			a.belongunit
+	</select>
+
+	<select id="queryTotalSiteUser" parameterType="page" resultType="int">
+		SELECT
+			count(a.id) AS userCount
+		FROM
+			yh_admin a
+		LEFT JOIN nb_site s ON s.SITE_SID = a.belongunit
+		WHERE
+			a.status_is = 'Y'
+ 			AND #{pd.start_day} >= cover_date
+			AND s.site_type='03'
+			AND s.SITE_STATUS=1
+	</select>
+
+
+
+</mapper>

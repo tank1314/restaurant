@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="OrderRefundMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		nmw_order_refund
+	</sql>
+
+	<!-- 字段 -->
+	<sql id="Field">
+        id,
+		order_sn,
+		refund_money,
+		refund_reason,
+		audit_time,
+		refund_status,
+		refund_status_string,
+		apply_time,
+		refund_platform,
+		apply_user_id,
+		audit_user_id,
+		refund_sn,
+		audit_user_name,
+		apply_user_name,
+		order_money,
+		trade_no
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{order_sn},	
+		#{refund_money},	
+		#{refund_reason},	
+		#{audit_time},	
+		#{refund_status},	
+		#{refund_status_string},	
+		#{apply_time},	
+		#{refund_platform},	
+		#{apply_user_id},	
+		#{audit_user_id},	
+		#{refund_sn},	
+		#{audit_user_name},	
+		#{apply_user_name},
+		#{order_money},
+		#{trade_no}
+	</sql>
+
+	
+	<!-- 修改 -->
+	<update id="edit" parameterType="pd">
+		update
+		<include refid="tableName"></include>
+		set
+			audit_time = now(),
+			refund_status = 2,
+			refund_status_string = '审核通过'
+		where 
+		id in (#{ids})
+	</update>
+	
+	<!-- 通过ID获取数据 -->
+	<select id="findById" parameterType="pd" resultType="pd">
+		select
+            id,
+            order_sn,
+            floor(refund_money/100) AS refund_money,
+            refund_reason,
+            audit_time,
+            refund_status,
+            refund_status_string,
+            apply_time,
+            refund_platform,
+            apply_user_id,
+            audit_user_id,
+            refund_sn,
+            audit_user_name,
+            apply_user_name,
+            floor(order_money/100) AS order_money,
+            trade_no
+		from
+          nmw_order_refund
+		where
+          id = #{id}
+	</select>
+	
+	<!-- 列表 -->
+	<select id="datalistPage" parameterType="page" resultType="pd">
+        select
+            nor.id,
+            nor.order_sn,
+            floor(refund_money/100) AS refund_money,
+            nor.refund_reason,
+            nor.audit_time,
+            nor.refund_status,
+            nor.refund_status_string,
+            nor.apply_time,
+            nor.refund_platform,
+            nor.apply_user_id,
+            nor.audit_user_id,
+            nor.refund_sn,
+            nor.audit_user_name,
+            nor.apply_user_name,
+            floor(nor.order_money/100) AS order_money,
+            nor.trade_no
+        from
+          nmw_order_refund nor
+        LEFT JOIN nmw_order o ON o.order_group_sn=nor.order_sn
+        LEFT JOIN nmw_lq_order_pay_rec lop on lop.pay_sn=nor.order_sn
+        LEFT JOIN nmw_miu_order_pay_rec mopr ON mopr.pay_sn=nor.order_sn
+        LEFT JOIN nmw_fornet_order_pay_rec fopr ON fopr.pay_sn=nor.order_sn
+        where 1=1
+        <if test="pd.order_id!= null and pd.order_id != ''">
+        and (o.id=#{pd.order_id} or lop.id=#{pd.order_id} or mopr.id=#{pd.order_id} or fopr.id=#{pd.order_id} or
+            nor.order_sn=#{pd.order_id} OR nor.trade_no=#{pd.order_id})
+		</if>
+        <if test="pd.lastLoginStart!= null and pd.lastLoginStart != ''">
+        and
+            date_format(nor.apply_time,'%Y-%m-%d')>=#{pd.lastLoginStart}
+		</if>
+        <if test="pd.lastLoginEnd!= null and pd.lastLoginEnd != ''">
+        and
+            #{pd.lastLoginEnd}>=date_format(nor.apply_time,'%Y-%m-%d')
+		</if>
+        <if test="pd.refund_platform!= null and pd.refund_platform != ''">
+        and
+            nor.refund_platform=#{pd.refund_platform}
+		</if>
+        order BY
+        nor.id desc
+	</select>
+	
+	<!-- 列表(全部) -->
+	<select id="listAll" parameterType="pd" resultType="pd">
+		select
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+	</select>
+	
+	<!-- 批量删除 -->
+	<delete id="deleteAll" parameterType="String">
+		delete from
+		<include refid="tableName"></include>
+		where
+        id in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+                 #{item}
+		</foreach>
+	</delete>
+
+</mapper>

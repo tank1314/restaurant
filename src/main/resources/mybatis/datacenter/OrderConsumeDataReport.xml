@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="OrderConsumeDataMapper">
+
+    <!-- 当前月 单项、专项、套餐数据]-->
+    <select id="currentMonthAllDataReport" parameterType="pd" resultType="pd">
+        SELECT COUNT(t.pclass1) datacount, CASE t.pclass1 WHEN '01' THEN '套餐' WHEN '02' THEN '单项' WHEN '03' THEN '专项' WHEN '05' THEN '周期订' END pclass1  FROM nmw_order t LEFT JOIN nb_site a
+        ON t.site_id = a.SITE_ID WHERE 1=1
+        <!--AND b.bus_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>-->
+        <if test="order_status != null and order_status !='' and order_status == 7">
+            AND t.order_status = 7
+        </if>
+        <if test="order_status != null and order_status !='' and order_status == 0">
+            AND t.is_cancel = 1
+        </if>
+        <if test="lastLoginEnd!=null and lastLoginEnd!=''">
+            AND t.start_day LIKE CONCAT(CONCAT('%', #{lastLoginEnd}),'%')
+        </if>
+        AND t.pclass1 IN('01','02','03')
+        GROUP BY t.pclass1
+    </select>
+
+
+    <!-- 订单走势 商品分类：单项 专项 套餐 历史订单走势 -->
+    <select id="OrderAllDataReport" parameterType="pd" resultType="pd">
+        SELECT COUNT(t.pclass1) datacount , CASE t.pclass1 WHEN '01' THEN '套餐' WHEN '02' THEN '单项' WHEN '03' THEN '专项' WHEN '05' THEN '周期订' END pclass1,DATE_FORMAT(t.start_day,'%Y-%m') start_day FROM nmw_order t LEFT JOIN nb_site a
+        on t.site_id = a.SITE_ID
+        WHERE 1 =1
+        <!--AND b.bus_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>-->
+        AND t.start_day &lt;= #{lastLoginEnd}
+        <if test="order_status != null and order_status !='' and order_status == 7">
+            AND t.order_status = 7
+        </if>
+        <if test="order_status != null and order_status !='' and order_status == 0">
+            AND t.is_cancel = 1
+        </if>
+        AND t.pclass1 IN ('01','02','03')
+        GROUP BY t.pclass1 ,DATE_FORMAT(t.start_day,'%Y-%m')
+        ORDER BY t.start_day
+    </select>
+
+    <!-- 各个商品分类 中产品名称 数据查询-->
+    <select id="queryOrderType" parameterType="pd" resultType="pd">
+        SELECT COUNT(b.product_id) datacount,b.pname product_name FROM nmw_order t LEFT JOIN nb_site a
+        ON t.site_id = a.SITE_ID LEFT JOIN order_product b ON b.order_sn = t.order_sn
+        WHERE 1 =1
+        <!--AND b.bus_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>-->
+        <if test="order_status != null and order_status !='' and order_status == 7">
+            AND t.order_status = 7
+        </if>
+        <if test="order_status != null and order_status !='' and order_status == 0">
+            AND t.is_cancel = 1
+        </if>
+        <if test="lastLoginEnd!=null and lastLoginEnd!=''">
+            AND t.start_day LIKE CONCAT(CONCAT('%', #{lastLoginEnd}),'%')
+        </if>
+        <if test="pclass1!=null and pclass1!=''">
+            AND t.pclass1 = #{pclass1}
+        </if>
+        GROUP BY b.product_id
+    </select>
+
+
+    <!-- 商品分类单项 数据详情 -->
+    <select id="OrderDetailDataReport" parameterType="pd" resultType="pd">
+        SELECT COUNT(t.pclass1) datacount , CASE t.pclass1 WHEN '01' THEN '套餐' WHEN '02' THEN '单项' WHEN '03' THEN '专项' WHEN '05' THEN '周期订' END pclass1,DATE_FORMAT(t.start_day,'%Y-%m') start_day FROM nmw_order t LEFT JOIN nb_site a
+        on t.site_id = a.SITE_ID
+        WHERE 1 =1
+        <!--AND b.bus_id IN
+        <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>-->
+        AND t.start_day &lt;= #{lastLoginEnd}
+        <if test="order_status != null and order_status !='' and order_status == 7">
+            AND t.order_status = 7
+        </if>
+        <if test="order_status != null and order_status !='' and order_status == 0">
+            AND t.is_cancel = 1
+        </if>
+        <if test="pclass1!=null and pclass1!=''">
+            AND t.pclass1 = #{pclass1}
+        </if>
+        GROUP BY t.pclass1 ,DATE_FORMAT(t.start_day,'%Y-%m')
+        ORDER BY t.start_day
+    </select>
+
+    <!-- 订单状态统计(饼状图)-->
+    <select id="queryOrderByStatus" parameterType="pd" resultType="pd">
+        SELECT count(1) datacount, '服务完成' as remark from nmw_order t WHERE t.order_status = 7
+        <if test="lastLoginEnd!=null and lastLoginEnd!=''">
+            AND t.start_day LIKE CONCAT(CONCAT('%', #{lastLoginEnd}),'%')
+        </if>
+        UNION ALL
+        SELECT count(1) datacount, '取消订单' as remark from nmw_order t WHERE t.order_status = 8 AND t.pay_status =1
+        <if test="lastLoginEnd!=null and lastLoginEnd!=''">
+            AND t.start_day LIKE CONCAT(CONCAT('%', #{lastLoginEnd}),'%')
+        </if>
+        UNION ALL
+        SELECT count(1) datacount, '预约订单' as remark from nmw_order t WHERE 1=1
+        <if test="lastLoginEnd!=null and lastLoginEnd!=''">
+            AND t.create_time LIKE CONCAT(CONCAT('%', #{lastLoginEnd}),'%')
+        </if>
+    </select>
+
+    <!-- 订单状态走势图 -->
+    <select id="queryOrderZsData" parameterType="pd" resultType="pd">
+        SELECT * FROM (
+        SELECT count(1) datacount, '服务完成' as remark,DATE_FORMAT(t.start_day,'%Y-%m') time from nmw_order t WHERE t.order_status = 7 AND t.start_day &lt;= #{lastLoginEnd}
+        GROUP BY DATE_FORMAT(t.start_day,'%Y-%m')
+        UNION ALL
+        SELECT count(1) datacount, '取消订单' as remark,DATE_FORMAT(t.start_day,'%Y-%m') time from nmw_order t WHERE t.order_status = 8  AND t.start_day &lt;= #{lastLoginEnd}
+        GROUP BY DATE_FORMAT(t.start_day,'%Y-%m')
+        UNION ALL
+        SELECT count(1) datacount, '预约订单' as remark,DATE_FORMAT(t.create_time,'%Y-%m') time from nmw_order t WHERE t.create_time &lt;= #{lastLoginEnd}
+        GROUP BY DATE_FORMAT(t.create_time,'%Y-%m')) a ORDER BY a.time
+    </select>
+
+</mapper>

@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CouponDataReportMapper">
+    
+    <!-- 未使用+有效期-->
+    <select id="querycouponStockNoUse" parameterType="pd" resultType="pd">
+        SELECT CASE t.service_type WHEN 1 THEN '家政服务' WHEN 2 THEN '跑腿' WHEN 3 THEN '出行' WHEN 4 THEN '洗衣' END type,
+        count(1) datacount,
+        FORMAT(price*count(1),2) summomey
+        FROM yh_user_coupon t
+        WHERE 1=1 AND t.is_use = 0
+        AND t.service_type IN(1,2,3,4)
+        AND DATE_FORMAT(from_unixtime(t.end_time),'%Y-%m-%d') &gt;= (select date_format(now(),'%Y-%m-%d'))
+        AND t.title is NOT null AND t.title !=''
+        GROUP BY t.service_type
+    </select>
+
+    <!-- 未使用+已过期-->
+    <select id="querycouponStockNoUseGq" parameterType="pd" resultType="pd">
+        SELECT CASE t.service_type WHEN 1 THEN '家政服务' WHEN 2 THEN '跑腿' WHEN 3 THEN '出行' WHEN 4 THEN '洗衣' END type,
+        count(1) datacount,
+        FORMAT(price*count(1),2) summomey
+        FROM yh_user_coupon t
+        WHERE 1=1 AND t.is_use = 0
+        AND t.service_type IN(1,2,3,4)
+        AND DATE_FORMAT(from_unixtime(t.end_time),'%Y-%m-%d') &lt; (select date_format(now(),'%Y-%m-%d'))
+        AND t.title is NOT null AND t.title !=''
+        GROUP BY t.service_type
+    </select>
+
+
+    <!-- 已使用的总量-->
+    <select id="querycouponStockHaveUse" parameterType="pd" resultType="pd">
+        SELECT CASE t.service_type WHEN 1 THEN '家政服务' WHEN 2 THEN '跑腿' WHEN 3 THEN '出行' WHEN 4 THEN '洗衣' END type,
+        count(1) datacount,
+        FORMAT(price*count(1),2) summomey
+        FROM yh_user_coupon t
+        WHERE 1=1 AND t.is_use = 1
+        AND t.service_type IN(1,2,3,4)
+        AND t.title is NOT null AND t.title !=''
+        GROUP BY t.service_type
+        ORDER BY datacount DESC
+    </select>
+
+    <!-- 家政服务下各项使用情况 -->
+    <select id="queryServiceTypeJz" parameterType="pd" resultType="pd">
+        SELECT t.title,count(1) datacount,FORMAT(price*count(1),2) summoney
+        FROM yh_user_coupon t WHERE 1=1 AND t.is_use = 1
+        AND t.title is NOT null AND t.title !=''
+        GROUP BY t.title
+        ORDER BY datacount DESC
+    </select>
+
+
+
+
+
+    <!-- 家政月使用优惠券详情 -->
+    <select id="queryJZData" parameterType="pd" resultType="pd">
+        SELECT b.city_name city,DATE_FORMAT(b.start_day,'%d') dayinfo,COUNT(t.id) datacount,(COUNT(t.id)*t.price) summoney from yh_user_coupon t LEFT JOIN nmw_order b ON t.id = b.coupon_id
+        WHERE 1=1 AND t.is_use = 1
+        AND t.service_type =1
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(b.start_day,'%Y-%m') = #{lastLoginStart}
+        </if>
+        GROUP BY b.city_name,dayinfo
+    </select>
+
+    <!-- 邻趣使用优惠券-->
+    <select id="queryLQData" parameterType="pd" resultType="pd">
+        SELECT b.receiver_address_city city,DATE_FORMAT(b.service_date,'%d') dayinfo,COUNT(t.id) datacount,(COUNT(t.id)*t.price) summoney from yh_user_coupon t LEFT JOIN nmw_lq_order b ON t.id = b.coupon_id
+        WHERE 1=1 AND t.is_use = 1
+        AND t.service_type =2
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(b.service_date,'%Y-%m') = #{lastLoginStart}
+        </if>
+        GROUP BY b.receiver_address_city,dayinfo
+    </select>
+
+
+    <!-- 觅优使用优惠券-->
+    <select id="queryMYData" parameterType="pd" resultType="pd">
+        SELECT b.city_name city,DATE_FORMAT(b.create_time,'%d') dayinfo,COUNT(t.id) datacount,(COUNT(t.id)*t.price) summoney from yh_user_coupon t LEFT JOIN nmw_miu_order b ON t.id = b.coupon_id
+        WHERE 1=1 AND t.is_use = 1
+        AND t.service_type =3
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(b.create_time,'%Y-%m') = #{lastLoginStart}
+        </if>
+        GROUP BY b.city_name,dayinfo
+    </select>
+
+    <!-- 洗衣使用优惠券-->
+    <select id="queryXYData" parameterType="pd" resultType="pd">
+        SELECT b.city_name city,DATE_FORMAT(b.create_time,'%d') dayinfo,COUNT(t.id) datacount,(COUNT(t.id)*t.price) summoney from yh_user_coupon t LEFT JOIN nmw_fornet_order b ON t.id = b.coupon_id
+        WHERE 1=1 AND t.is_use = 1
+        AND t.service_type =4
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(b.create_time,'%Y-%m') = #{lastLoginStart}
+        </if>
+        GROUP BY b.city_name,dayinfo
+    </select>
+
+
+    <!-- 各项数据金额汇总-->
+    <!-- 家政月使用优惠券详情 -->
+    <select id="queryJZDataMoney" parameterType="pd" resultType="pd">
+        SELECT SUM(a.summoney) money,a.city FROM
+        (
+        SELECT b.city_name city,DATE_FORMAT(b.start_day,'%d') dayinfo,COUNT(t.id) datacount,(COUNT(t.id)*t.price) summoney from yh_user_coupon t LEFT JOIN nmw_order b ON t.id = b.coupon_id
+        WHERE 1=1 AND t.is_use = 1
+        AND t.service_type =1
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(b.start_day,'%Y-%m') = #{lastLoginStart}
+        </if>
+        GROUP BY b.city_name,dayinfo) a GROUP BY city
+    </select>
+
+    <!-- 邻趣使用优惠券-->
+    <select id="queryLQDataMoney" parameterType="pd" resultType="pd">
+        SELECT SUM(a.summoney) money,a.city FROM
+        (
+        SELECT b.receiver_address_city city,DATE_FORMAT(b.service_date,'%d') dayinfo,COUNT(t.id) datacount,(COUNT(t.id)*t.price) summoney from yh_user_coupon t LEFT JOIN nmw_lq_order b ON t.id = b.coupon_id
+        WHERE 1=1 AND t.is_use = 1
+        AND t.service_type =2
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(b.service_date,'%Y-%m') = #{lastLoginStart}
+        </if>
+        GROUP BY b.receiver_address_city,dayinfo) a GROUP BY city
+    </select>
+
+
+    <!-- 觅优使用优惠券-->
+    <select id="queryMYDataMoney" parameterType="pd" resultType="pd">
+        SELECT SUM(a.summoney) money,a.city FROM
+        (
+        SELECT b.city_name city,DATE_FORMAT(b.create_time,'%d') dayinfo,COUNT(t.id) datacount,(COUNT(t.id)*t.price) summoney from yh_user_coupon t LEFT JOIN nmw_miu_order b ON t.id = b.coupon_id
+        WHERE 1=1 AND t.is_use = 1
+        AND t.service_type =3
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(b.create_time,'%Y-%m') = #{lastLoginStart}
+        </if>
+        GROUP BY b.city_name,dayinfo) a GROUP BY city
+    </select>
+
+    <!-- 洗衣使用优惠券-->
+    <select id="queryXYDataMoney" parameterType="pd" resultType="pd">
+        SELECT SUM(a.summoney) money,a.city FROM
+        (
+        SELECT b.city_name city,DATE_FORMAT(b.create_time,'%d') dayinfo,COUNT(t.id) datacount,(COUNT(t.id)*t.price) summoney from yh_user_coupon t LEFT JOIN nmw_fornet_order b ON t.id = b.coupon_id
+        WHERE 1=1 AND t.is_use = 1
+        AND t.service_type =4
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(b.create_time,'%Y-%m') = #{lastLoginStart}
+        </if>
+        GROUP BY b.city_name,dayinfo) a GROUP BY city
+    </select>
+
+
+
+
+
+</mapper>

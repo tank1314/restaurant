@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="SiteOrderMapper">
+
+    <!-- 订单总额 = 溢价价格+工具总额   支付金额= order_money（订单金额） -->
+	<select id="querySiteOrderAllInfo" parameterType="page" resultType="pd">
+        SELECT
+        SUM(a.sitecount) allsitecount,
+        SUM(a.order_money) allordermoneys,
+        SUM(a.orderallmoney) allmoney
+        FROM
+            (
+                SELECT
+                b.site_name,
+                b.site_sid,
+                COUNT(b.site_sid) sitecount,
+                SUM(t.order_money / 100) order_money,
+                (SUM(premium_money/100) + SUM(tools_money / 100)) orderallmoney
+                FROM
+                    nmw_order t
+                LEFT JOIN nb_site b ON t.site_id = b.site_sid
+                WHERE
+                    IFNULL(t.site_id, '')
+                AND 1 = 1
+                AND t.order_status = 7
+                AND t.is_cancel = 0
+                <if test="city_id !=null and city_id!=''">
+                    AND t.city_id = #{city_id}
+                </if>
+                <if test="catagory !=null and catagory!=''">
+                    AND b.catagory = #{catagory}
+                </if>
+                <!-- 周数据START -->
+                <if test=" monthOrWeek == 2">
+                    and t.start_day &gt;= DATE_SUB(CURDATE(), INTERVAL 1 WEEK)
+                </if>
+               <!-- 周数据END -->
+               <!-- 月数据START-->
+                <if test="lastLoginStart !=null and lastLoginStart !='' and monthOrWeek == 1" >
+                    AND t.start_day &gt;= #{lastLoginStart}
+                </if>
+                <if test="lastLoginEnd!=null and lastLoginEnd!='' and monthOrWeek == 1">
+                    AND t.start_day &lt;= #{lastLoginEnd}
+                </if>
+              <!-- 月数据END-->
+                <!-- 默认查询最近一个月的数据START-->
+                <!--<if test="(lastLoginStart == null || lastLoginStart == '') and (lastLoginEnd == null || lastLoginEnd == '')">
+                    AND t.start_day &gt;= DATE_SUB(CURDATE(),INTERVAL 1 MONTH)
+                </if>-->
+              <!-- 默认查询最近一个月的数据END-->
+                GROUP BY
+                    t.site_id
+            ) a
+	</select>
+
+    <!-- 站点信息详情查询 -->
+    <select id="querySiteOrderInfo" parameterType="pd" resultType="pd">
+        SELECT
+            b.site_name,
+            b.site_sid,
+            COUNT(b.site_sid) sitecount,
+            TRUNCATE(SUM(t.order_money /100), 2) ordermoney ,
+            FORMAT(SUM(t.order_money /100), 2) ordermoneyshow,
+            TRUNCATE(SUM(premium_money /100) + SUM(tools_money / 100), 2) allmoney ,
+            FORMAT(SUM(premium_money /100) + SUM(tools_money / 100), 2) allmoneyshow
+        FROM
+            nmw_order t
+        LEFT JOIN nb_site b ON t.site_id = b.site_sid
+        WHERE
+            IFNULL(t.site_id, '')
+        AND 1 = 1
+        AND t.order_status = 7
+        AND t.is_cancel = 0
+        <if test="city_id !=null and city_id!=''">
+            AND t.city_id = #{city_id}
+        </if>
+        <if test="catagory !=null and catagory!=''">
+            AND b.catagory = #{catagory}
+        </if>
+        <!-- 周数据START -->
+        <if test="monthOrWeek == 2">
+            and t.start_day &gt;= DATE_SUB(CURDATE(), INTERVAL 1 WEEK)
+        </if>
+        <!-- 周数据END -->
+        <!-- 月数据START-->
+        <if test="lastLoginStart !=null and lastLoginStart !='' and monthOrWeek == 1" >
+            AND t.start_day &gt;= #{lastLoginStart}
+        </if>
+        <if test="lastLoginEnd!=null and lastLoginEnd!='' and monthOrWeek == 1">
+            AND t.start_day &lt;= #{lastLoginEnd}
+        </if>
+        <!-- 月数据END-->
+        <!--<if test="(lastLoginStart == null || lastLoginStart == '') and (lastLoginEnd == null || lastLoginEnd == '')">
+            AND t.start_day &gt;= DATE_SUB(CURDATE(),INTERVAL 1 MONTH)
+        </if>-->
+        GROUP BY
+            t.site_id
+        order by sitecount DESC ,ordermoney DESC,t.site_id
+    </select>
+
+</mapper>

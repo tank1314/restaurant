@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="EmployeeStatusReportMapper">
+
+    <!-- 入职员工 -->
+    <select id="queryEmployeeJoin" parameterType="pd" resultType="pd">
+        SELECT b.city2 city,DATE_FORMAT(t.cover_date,'%m') dayinfo,COUNT(1) datacount FROM yh_admin t
+        LEFT JOIN account_role a ON t.id = a.account_id
+        LEFT JOIN nb_site b ON t.belongunit = b.site_sid
+        WHERE 1=1
+        AND t.status_is = 'Y' AND a.account_id IS NOT NULL AND a.role_id = 8
+        <if test="siteSid != null and siteSid.length > 0">
+            AND b.city2 IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(t.cover_date,'%Y') = #{lastLoginStart}
+        </if>
+        GROUP BY city2,dayinfo
+    </select>
+
+    <!-- 离职员工-->
+    <select id="queryEmployeeLeave" parameterType="pd" resultType="pd">
+        SELECT b.city2 city, DATE_FORMAT(t.ban_time, '%m') dayinfo, COUNT(1) datacount FROM yh_admin t
+        LEFT JOIN account_role a ON t.id = a.account_id
+        LEFT JOIN nb_site b ON t.belongunit = b.site_sid
+        WHERE 1 = 1
+        AND t.status_is = 'N'
+        AND a.account_id IS NOT NULL
+        AND a.role_id = 8
+        AND a.account_id IS NOT NULL AND a.role_id = 8
+        <if test="siteSid != null and siteSid.length > 0">
+            AND b.city2 IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(t.ban_time,'%Y') = #{lastLoginStart}
+        </if>
+        AND t.ban_time IS NOT NULL
+        GROUP BY city2,dayinfo
+    </select>
+
+
+
+    <!-- 入职员工总数 -->
+    <select id="queryEmployeeJoinData" parameterType="pd" resultType="pd">
+        SELECT city,sum(datacount) num FROM (
+        SELECT b.city2 city,DATE_FORMAT(t.cover_date,'%m') dayinfo,COUNT(1) datacount FROM yh_admin t
+        LEFT JOIN account_role a ON t.id = a.account_id
+        LEFT JOIN nb_site b ON t.belongunit = b.site_sid
+        WHERE 1=1
+        AND t.status_is = 'Y' AND a.account_id IS NOT NULL AND a.role_id = 8
+        <if test="siteSid != null and siteSid.length > 0">
+            AND b.city2 IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(t.cover_date,'%Y') = #{lastLoginStart}
+        </if>
+        GROUP BY city2,dayinfo) a GROUP BY city
+    </select>
+
+    <!-- 离职员工总人数-->
+    <select id="queryEmployeeLeaveData" parameterType="pd" resultType="pd">
+        SELECT city,sum(datacount) num FROM (
+        SELECT b.city2 city, DATE_FORMAT(t.ban_time, '%m') dayinfo, COUNT(1) datacount FROM yh_admin t
+        LEFT JOIN account_role a ON t.id = a.account_id
+        LEFT JOIN nb_site b ON t.belongunit = b.site_sid
+        WHERE 1 = 1
+        AND t.status_is = 'N'
+        AND a.account_id IS NOT NULL
+        AND a.role_id = 8
+        AND a.account_id IS NOT NULL AND a.role_id = 8
+        <if test="siteSid != null and siteSid.length > 0">
+            AND b.city2 IN
+            <foreach item="item" index="index" collection="siteSid" open="(" separator="," close=")">
+                #{item,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="lastLoginStart !=null and lastLoginStart !=''">
+            AND DATE_FORMAT(t.ban_time,'%Y') = #{lastLoginStart}
+        </if>
+        AND t.ban_time IS NOT NULL
+        GROUP BY city2,dayinfo) a GROUP BY city
+    </select>
+
+
+    <!-- 累计技师人数 add by tankun 20160630-->
+    <select id="queryEmployeeJsReportData" parameterType="pd" resultType="pd">
+        SELECT COUNT(1) datacount FROM yh_admin t LEFT JOIN account_role a ON t.id = a.account_id
+        WHERE 1=1 AND a.account_id IS NOT NULL AND a.role_id = 8
+    </select>
+
+    <!-- 累计服务时长 add by tankun 20160630-->
+    <select id="queryServiceTimeData" parameterType="pd" resultType="pd">
+        SELECT FORMAT(SUM(spend_time),2)  datacount FROM
+        (
+        SELECT (sum(t.spend_time)/60) spend_time from nmw_order t WHERE t.order_status = 7 AND t.is_cancel = 0
+        UNION ALL
+        SELECT SUM(0) spend_time FROM v_old_order_info t WHERE t.is_cancel = 0
+        ) a
+    </select>
+
+</mapper>
